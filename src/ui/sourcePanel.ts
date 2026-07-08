@@ -59,4 +59,33 @@ export function initSourcePanel(store: Store) {
   document.querySelector<HTMLInputElement>('#adj-bg')!.addEventListener('input', (e) => {
     store.update({ adjustments: { ...store.get().adjustments, backgroundColor: (e.target as HTMLInputElement).value } });
   });
+
+  const btnRemoveBg = document.querySelector<HTMLButtonElement>('#btn-remove-bg')!;
+  const progress = document.querySelector<HTMLProgressElement>('#bg-progress')!;
+  btnRemoveBg.addEventListener('click', async () => {
+    const img = store.get().sourceImage;
+    if (!img) return;
+    btnRemoveBg.disabled = true;
+    progress.hidden = false;
+    status.textContent = 'Téléchargement du modèle…';
+    try {
+      const { removeBg } = await import('../bgRemoval');
+      // L'objectURL de l'image est révoqué après chargement : on repasse par un canvas.
+      const source = await new Promise<Blob>((resolve, reject) => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext('2d')!.drawImage(img, 0, 0);
+        c.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob a échoué'))), 'image/png');
+      });
+      status.textContent = 'Suppression du fond…';
+      const result = await removeBg(source, (r) => { progress.value = r; });
+      store.update({ bgRemovedBlob: result });
+      status.textContent = 'Fond supprimé.';
+    } catch (err) {
+      status.textContent = `Échec de la suppression du fond (réseau ?) : ${err instanceof Error ? err.message : err}`;
+    } finally {
+      btnRemoveBg.disabled = false;
+      progress.hidden = true;
+    }
+  });
 }
