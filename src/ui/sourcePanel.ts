@@ -67,6 +67,7 @@ export function initSourcePanel(store: Store) {
     if (!img) return;
     btnRemoveBg.disabled = true;
     progress.hidden = false;
+    progress.value = 0;
     status.textContent = 'Téléchargement du modèle…';
     try {
       const { removeBg } = await import('../bgRemoval');
@@ -79,8 +80,10 @@ export function initSourcePanel(store: Store) {
       });
       status.textContent = 'Suppression du fond…';
       const result = await removeBg(source, (r) => { progress.value = r; });
-      store.update({ bgRemovedBlob: result });
-      status.textContent = 'Fond supprimé.';
+      if (store.get().sourceImage === img) { // l'image peut avoir changé pendant le traitement
+        store.update({ bgRemovedBlob: result });
+        status.textContent = 'Fond supprimé.';
+      }
     } catch (err) {
       status.textContent = `Échec de la suppression du fond (réseau ?) : ${err instanceof Error ? err.message : err}`;
     } finally {
