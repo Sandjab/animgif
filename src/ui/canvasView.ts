@@ -32,8 +32,7 @@ export function initCanvasView(store: Store) {
   function drawFrame(t: number) {
     if (!baked) return;
     const { w, h } = previewSize(store);
-    canvas.width = w;
-    canvas.height = h;
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
     const view = { imageW: baked.width, imageH: baked.height, outW: w, outH: h };
     const m = composeEffects(store.get().effects, t, view);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -45,11 +44,23 @@ export function initCanvasView(store: Store) {
     if (t === 0) overlay?.(); // l'overlay d'édition n'apparaît que sur l'aperçu statique
   }
 
+  let lastSource: HTMLImageElement | null = null;
+  let lastBlob: Blob | null = null;
+  let lastAdj: unknown = null;
   store.subscribe(() => {
-    const hasImage = store.get().sourceImage !== null;
+    const { sourceImage, bgRemovedBlob, adjustments } = store.get();
+    const hasImage = sourceImage !== null;
     hint.hidden = hasImage;
+    canvas.hidden = !hasImage;
     document.querySelector<HTMLElement>('#adjustments')!.hidden = !hasImage;
     document.querySelector<HTMLElement>('#anim-controls')!.hidden = !hasImage;
+    if (sourceImage === lastSource && bgRemovedBlob === lastBlob && adjustments === lastAdj) {
+      drawFrame(0); // seuls les effets/réglages d'animation ont changé : simple redraw
+      return;
+    }
+    lastSource = sourceImage;
+    lastBlob = bgRemovedBlob;
+    lastAdj = adjustments;
     rebake();
   });
 
