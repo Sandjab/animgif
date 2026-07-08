@@ -6,6 +6,9 @@ import type { Store } from './state';
 // Garde-fou mémoire : frames RGBA en pleine résolution.
 const MAX_BYTES = 500 * 1024 * 1024;
 
+// Borne une dimension d'export saisie : entier dans [16, 4096], 16 si invalide.
+export const clampDim = (v: number) => Math.min(4096, Math.max(16, Math.round(v) || 16));
+
 export function initExport(store: Store) {
   const btn = document.querySelector<HTMLButtonElement>('#btn-export')!;
   const progress = document.querySelector<HTMLProgressElement>('#export-progress')!;
@@ -14,8 +17,6 @@ export function initExport(store: Store) {
   const outH = document.querySelector<HTMLInputElement>('#out-h')!;
   const lockRatio = document.querySelector<HTMLInputElement>('#lock-ratio')!;
   const quality = document.querySelector<HTMLInputElement>('#out-quality')!;
-
-  const clampDim = (v: number) => Math.min(4096, Math.max(16, Math.round(v) || 16));
 
   // Verrou des proportions : modifier W ajuste H (et réciproquement) selon l'image source.
   const ratio = () => {

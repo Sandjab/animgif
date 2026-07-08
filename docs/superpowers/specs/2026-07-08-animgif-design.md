@@ -39,7 +39,9 @@ Hébergement : GitHub Pages (aucun serveur, aucune donnée ne quitte le navigate
 - **Rotation** : angle de départ → angle d'arrivée.
 - **Translation** : déplacement x/y.
 - **Bounce** : oscillation (amplitude, nombre d'oscillations).
-- Chaque effet a son **easing** : linéaire, ease-in-out, rebond.
+- Chaque effet a son **easing** : linéaire, ease-in-out, rebond — **sauf bounce**
+  (décision d'implémentation 2026-07-08 : sa courbe |sin| périodique EST sa temporalité,
+  un easing par-dessus déformerait l'espacement des oscillations).
 
 ### Prévisualisation
 - Lecteur play/pause sur canvas, basse résolution (~480 px) pour la fluidité.

@@ -30,3 +30,5 @@ Spec et plan : `docs/superpowers/`. Smoke test manuel : `docs/superpowers/smoke-
 - Le rendu pleine résolution des frames à l'export est synchrone : l'onglet peut se figer
   quelques secondes sur de gros exports (le garde-fou mémoire prévient au-delà de ~500 Mo au pic).
 - Seul le modèle de détourage `isnet_quint8` est auto-hébergé (`public/bg-removal/`).
+- En prévisualisation, le mode de boucle « n fois » joue sans fin ; la limite de lectures
+  s'applique au GIF exporté (vérifiée dans le fichier).
