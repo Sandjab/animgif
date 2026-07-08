@@ -45,6 +45,7 @@ function easingField(value: Easing, onChange: (e: Easing) => void): HTMLLabelEle
 
 const TITLES: Record<Effect['kind'], string> = {
   kenBurns: 'Zoom / Ken Burns', rotation: 'Rotation', translation: 'Translation', bounce: 'Bounce',
+  spin3d: 'Flip 3D',
 };
 
 function renderEffectCard(effect: Effect, index: number, store: Store): HTMLElement {

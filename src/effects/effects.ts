@@ -1,6 +1,6 @@
 import type { Effect, Rect } from '../types';
 import { applyEasing } from './easing';
-import { multiply, rotationDeg, translation, type Mat } from './matrix';
+import { multiply, rotationDeg, scaling, translation, type Mat } from './matrix';
 
 export interface View { imageW: number; imageH: number; outW: number; outH: number }
 
@@ -42,6 +42,15 @@ export function effectMatrix(effect: Effect, t: number, view: View): Mat {
       // Oscillation verticale : part du sol, monte (y négatif), retombe — |sin| par oscillation.
       const y = -effect.amplitude * Math.abs(Math.sin(Math.PI * effect.oscillations * t));
       return translation(0, y);
+    }
+    case 'spin3d': {
+      // Projection parallèle d'une rotation 3D : écrasement en cos de l'axe concerné.
+      // Au-delà de 90°, le facteur devient négatif : l'image apparaît en miroir
+      // (comportement « carte translucide », assumé par la spec v2).
+      const s = Math.cos(2 * Math.PI * effect.turns * applyEasing(effect.easing, t));
+      return effect.axis === 'y'
+        ? scaling(s, 1, view.outW / 2, view.outH / 2)
+        : scaling(1, s, view.outW / 2, view.outH / 2);
     }
   }
 }

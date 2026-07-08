@@ -1,6 +1,6 @@
 export interface Mat { a: number; b: number; c: number; d: number; e: number; f: number }
 
-// identity et scaling complètent l'API d'algèbre (utilisés par les tests et l'outillage futur).
+// identity complète l'API d'algèbre (utilisé par les tests) ; scaling sert à spin3d.
 export const identity = (): Mat => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
 
 export const translation = (tx: number, ty: number): Mat => ({ a: 1, b: 0, c: 0, d: 1, e: tx, f: ty });

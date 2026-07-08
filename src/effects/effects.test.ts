@@ -52,6 +52,24 @@ describe('effectMatrix', () => {
     expect(Math.abs(peak)).toBeCloseTo(20); // sommet de la 1re oscillation (vers le haut : y négatif)
     expect(peak).toBeLessThan(0);
   });
+  it('spin3d axe Y : identité à t=0, effondré au quart de tour, miroir à mi-tour', () => {
+    const e: Effect = { kind: 'spin3d', axis: 'y', turns: 1, easing: 'linear' };
+    const sq = { imageW: 100, imageH: 100, outW: 100, outH: 100 };
+    expect(apply(effectMatrix(e, 0, sq), { x: 10, y: 10 })).toEqual({ x: 10, y: 10 });
+    // quart de tour : cos(π/2) ≈ 0 → tout converge vers le centre en x
+    expect(apply(effectMatrix(e, 0.25, sq), { x: 10, y: 10 }).x).toBeCloseTo(50);
+    // mi-tour : cos(π) = −1 → miroir autour du centre, y intact
+    const p = apply(effectMatrix(e, 0.5, sq), { x: 10, y: 10 });
+    expect(p.x).toBeCloseTo(90);
+    expect(p.y).toBeCloseTo(10);
+  });
+  it('spin3d axe X écrase la dimension verticale', () => {
+    const e: Effect = { kind: 'spin3d', axis: 'x', turns: 1, easing: 'linear' };
+    const sq = { imageW: 100, imageH: 100, outW: 100, outH: 100 };
+    const p = apply(effectMatrix(e, 0.5, sq), { x: 10, y: 10 });
+    expect(p.x).toBeCloseTo(10);
+    expect(p.y).toBeCloseTo(90);
+  });
 });
 
 describe('composeEffects', () => {
