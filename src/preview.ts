@@ -1,4 +1,4 @@
-import { pingPongOrder, sampleTimes } from './effects/timeline';
+import { frameOrder, sampleTimes } from './effects/timeline';
 import type { Store } from './state';
 
 export function initPreview(store: Store, drawFrame: (t: number, showOverlay?: boolean) => void) {
@@ -10,18 +10,18 @@ export function initPreview(store: Store, drawFrame: (t: number, showOverlay?: b
   let timer: number | null = null;
   let frameIdx = 0;
 
-  function frameSequence(): number[] {
-    const { steps } = store.get();
-    const order = Array.from({ length: steps }, (_, i) => i);
-    return store.get().loopMode === 'pingpong' ? pingPongOrder(steps) : order;
-  }
-
   function tick() {
-    const seq = frameSequence();
-    const times = sampleTimes(store.get().steps);
+    const s = store.get();
+    const seq = frameOrder(s.steps, s.reverse, s.loopMode === 'pingpong');
+    // Mode « n fois » : la lecture s'arrête d'elle-même après loopCount passages complets.
+    if (s.loopMode === 'count' && frameIdx >= seq.length * s.loopCount) {
+      stop();
+      return;
+    }
+    const times = sampleTimes(s.steps);
     drawFrame(times[seq[frameIdx % seq.length]], false);
     frameIdx++;
-    timer = window.setTimeout(tick, store.get().delayMs);
+    timer = window.setTimeout(tick, s.delayMs);
   }
 
   function stop() {
