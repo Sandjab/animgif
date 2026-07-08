@@ -19,6 +19,8 @@ export function fitMatrix(view: View): Mat {
 }
 
 // Mappe un rect (coordonnées image) sur le viewport de sortie.
+// Contrat : si le ratio du rect diffère de celui de la sortie, l'image est étirée
+// (l'UI d'édition contraint les rects au ratio de sortie pour l'éviter).
 function rectToViewport(r: Rect, view: View): Mat {
   const sx = view.outW / r.w, sy = view.outH / r.h;
   return { a: sx, b: 0, c: 0, d: sy, e: -r.x * sx, f: -r.y * sy };

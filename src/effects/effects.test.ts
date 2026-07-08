@@ -64,9 +64,22 @@ describe('composeEffects', () => {
     const m = composeEffects([kb], 0, view);
     expect(apply(m, { x: 200, y: 100 })).toEqual({ x: 100, y: 50 });
   });
-  it('translation + rotation se composent (translation appliquée à l\'image cadrée)', () => {
+  it('translation seule s\'applique sur l\'image cadrée', () => {
     const tr: Effect = { kind: 'translation', dx: 10, dy: 0, easing: 'linear' };
     const m = composeEffects([tr], 1, view);
     expect(apply(m, { x: 0, y: 0 })).toEqual({ x: 10, y: 0 });
+  });
+  it('deux effets se composent dans l\'ordre de la liste (le dernier appliqué en dernier)', () => {
+    const sq = { imageW: 100, imageH: 100, outW: 100, outH: 100 };
+    const tr: Effect = { kind: 'translation', dx: 10, dy: 0, easing: 'linear' };
+    const rot: Effect = { kind: 'rotation', fromDeg: 0, toDeg: 90, easing: 'linear' };
+    // [tr, rot] : translation d'abord, rotation ensuite → (0,0) → (10,0) → (100,10)
+    const p1 = apply(composeEffects([tr, rot], 1, sq), { x: 0, y: 0 });
+    expect(p1.x).toBeCloseTo(100);
+    expect(p1.y).toBeCloseTo(10);
+    // [rot, tr] : rotation d'abord → (0,0) → (100,0) → puis translation → (110,0)
+    const p2 = apply(composeEffects([rot, tr], 1, sq), { x: 0, y: 0 });
+    expect(p2.x).toBeCloseTo(110);
+    expect(p2.y).toBeCloseTo(0);
   });
 });
