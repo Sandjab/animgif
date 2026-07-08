@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decimate, delayToFps, frameOrder, pingPongOrder, sampleTimes } from './timeline';
+import { decimatedOrder, delayToFps, frameOrder, pingPongOrder, sampleTimes } from './timeline';
 
 describe('sampleTimes', () => {
   it('n steps → n valeurs de 0 à 1 incluses', () => {
@@ -40,14 +40,23 @@ describe('frameOrder', () => {
   });
 });
 
-describe('decimate', () => {
-  it('n=1 : identité', () => {
-    expect(decimate([0, 1, 2], 80, 1)).toEqual({ order: [0, 1, 2], delayMs: 80 });
+describe('decimatedOrder', () => {
+  it('n=1 : ordre complet, délai inchangé', () => {
+    expect(decimatedOrder(4, false, true, 1, 80)).toEqual({ order: [0, 1, 2, 3, 2, 1], delayMs: 80 });
   });
-  it('n=2 : une frame sur deux, délai doublé (durée totale préservée)', () => {
-    expect(decimate([0, 1, 2, 3, 2, 1], 80, 2)).toEqual({ order: [0, 2, 2], delayMs: 160 });
+  it('n=2 : décime la base, durée totale préservée', () => {
+    // base [0,1,2,3] → [0,2] ; durée 4×80=320 → 2×160
+    expect(decimatedOrder(4, false, false, 2, 80)).toEqual({ order: [0, 2], delayMs: 160 });
   });
-  it('n=3 : une frame sur trois, délai triplé', () => {
-    expect(decimate([0, 1, 2, 3, 4, 5], 100, 3)).toEqual({ order: [0, 3], delayMs: 300 });
+  it('n=2 + ping-pong : pas de frames dupliquées dos à dos, durée préservée', () => {
+    // full ping-pong = 6 frames × 80 = 480 ; base décimée [0,2] → mirror [0,2] ; 480/2 = 240
+    expect(decimatedOrder(4, false, true, 2, 80)).toEqual({ order: [0, 2], delayMs: 240 });
+  });
+  it('longueur non multiple : durée préservée à l\'arrondi près', () => {
+    // base 7×100=700 ; gardées [0,3,6] ; 700/3 ≈ 233
+    expect(decimatedOrder(7, false, false, 3, 100)).toEqual({ order: [0, 3, 6], delayMs: 233 });
+  });
+  it('reverse + décimation', () => {
+    expect(decimatedOrder(4, true, false, 2, 80)).toEqual({ order: [3, 1], delayMs: 160 });
   });
 });

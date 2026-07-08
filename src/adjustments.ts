@@ -18,11 +18,11 @@ export function buildFilterString(a: FilterSettings): string {
   if (a.brightness !== 1) parts.push(`brightness(${a.brightness})`);
   if (a.contrast !== 1) parts.push(`contrast(${a.contrast})`);
   if (a.saturation !== 1) parts.push(`saturate(${a.saturation})`);
-  if (a.sepia) parts.push(`sepia(${a.sepia})`);
-  if (a.grayscale) parts.push(`grayscale(${a.grayscale})`);
+  if (a.sepia && a.sepia > 0) parts.push(`sepia(${a.sepia})`);
+  if (a.grayscale && a.grayscale > 0) parts.push(`grayscale(${a.grayscale})`);
   if (a.hueRotate) parts.push(`hue-rotate(${a.hueRotate}deg)`);
   if (a.invert) parts.push('invert(1)');
-  if (a.blur) parts.push(`blur(${a.blur}px)`);
+  if (a.blur && a.blur > 0) parts.push(`blur(${a.blur}px)`);
   return parts.length ? parts.join(' ') : 'none';
 }
 

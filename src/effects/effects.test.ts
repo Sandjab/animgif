@@ -63,6 +63,12 @@ describe('effectMatrix', () => {
     expect(p.x).toBeCloseTo(90);
     expect(p.y).toBeCloseTo(10);
   });
+  it('spin3d : turns multiplie la vitesse angulaire', () => {
+    const e: Effect = { kind: 'spin3d', axis: 'y', turns: 2, easing: 'linear' };
+    const sq = { imageW: 100, imageH: 100, outW: 100, outH: 100 };
+    // 2 tours : à t=0.25 on a déjà fait un demi-tour → miroir (cos(π) = −1)
+    expect(apply(effectMatrix(e, 0.25, sq), { x: 10, y: 10 }).x).toBeCloseTo(90);
+  });
   it('spin3d axe X écrase la dimension verticale', () => {
     const e: Effect = { kind: 'spin3d', axis: 'x', turns: 1, easing: 'linear' };
     const sq = { imageW: 100, imageH: 100, outW: 100, outH: 100 };
