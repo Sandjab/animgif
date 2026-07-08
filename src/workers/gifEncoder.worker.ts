@@ -2,7 +2,7 @@ import encode from 'gifski-wasm';
 
 self.onmessage = async (e: MessageEvent) => {
   const { frames, width, height, frameDurations, quality, repeat } = e.data as {
-    frames: ImageData[]; width: number; height: number;
+    frames: Uint8Array[]; width: number; height: number;
     frameDurations: number[]; quality: number; repeat: number;
   };
   try {
