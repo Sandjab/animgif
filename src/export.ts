@@ -54,8 +54,10 @@ export function initExport(store: Store) {
     const { order, delayMs } = decimatedOrder(
       s.steps, s.reverse, s.loopMode === 'pingpong', s.decimation, s.delayMs,
     );
-    // Pic mémoire réel ≈ 3× les frames brutes : frames + concaténation worker + copie wasm.
-    const bytes = order.length * s.outW * s.outH * 4 * 3;
+    // Seules les frames réellement référencées sont rendues (la décimation peut en sauter 2/3).
+    const needed = [...new Set(order)].sort((a, b) => a - b);
+    // Pic mémoire ≈ frames rendues + 2× la séquence encodée (concaténation worker + copie wasm).
+    const bytes = (needed.length + 2 * order.length) * s.outW * s.outH * 4;
     if (bytes > MAX_BYTES) {
       const go = confirm(
         `Export volumineux : ${order.length} frames en ${s.outW}×${s.outH} (~${Math.round(bytes / 1e6)} Mo en mémoire au pic). Continuer ?`,
@@ -73,19 +75,22 @@ export function initExport(store: Store) {
       const baked = await bakeAdjustments(s.sourceImage, s.bgRemovedBlob, s.adjustments);
       const view = { imageW: baked.width, imageH: baked.height, outW: s.outW, outH: s.outH };
       const matrices = computeFrameMatrices(s.effects, s.steps, view);
-      const stepFrames = await renderFramesChunked(
-        baked, matrices, s.outW, s.outH, s.adjustments.backgroundColor,
+      const rendered = await renderFramesChunked(
+        baked, needed.map((i) => matrices[i]), s.outW, s.outH, s.adjustments.backgroundColor,
         (done, total) => {
           progress.value = done / total;
           status.textContent = `Rendu des frames… (${done}/${total})`;
         },
         () => cancelled,
       );
-      if (!stepFrames) {
+      // `|| cancelled` couvre la fenêtre morte : annulation pendant le tout dernier yield
+      // du rendu, alors que cancelEncode n'est pas encore branché.
+      if (!rendered || cancelled) {
         status.textContent = 'Export annulé.';
         return;
       }
-      const frames = order.map((i) => stepFrames[i]);
+      const frameByIndex = new Map(needed.map((idx, j) => [idx, rendered[j]]));
+      const frames = order.map((i) => frameByIndex.get(i)!);
 
       status.textContent = 'Encodage gifski… (peut prendre du temps)';
       progress.removeAttribute('value'); // indéterminée : gifski ne remonte pas de progression
