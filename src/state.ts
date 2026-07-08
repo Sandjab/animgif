@@ -20,6 +20,7 @@ export function initialState(): AppState {
     bgRemovedBlob: null,
     adjustments: {
       brightness: 1, contrast: 1, saturation: 1,
+      sepia: 0, grayscale: 0, hueRotate: 0, blur: 0, invert: false,
       flipH: false, flipV: false, rotate90: 0,
       backgroundColor: '#000000',
     },

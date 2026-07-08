@@ -1,10 +1,28 @@
 import type { Adjustments } from './types';
 
-export function buildFilterString(a: { brightness: number; contrast: number; saturation: number }): string {
+export interface FilterSettings {
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  sepia?: number;
+  grayscale?: number;
+  hueRotate?: number;
+  blur?: number;
+  invert?: boolean;
+}
+
+// L'ordre d'application des filtres CSS est significatif — ordre documenté (spec v2) :
+// luminosité, contraste, saturation, sépia, N&B, teinte, inversion, flou.
+export function buildFilterString(a: FilterSettings): string {
   const parts: string[] = [];
   if (a.brightness !== 1) parts.push(`brightness(${a.brightness})`);
   if (a.contrast !== 1) parts.push(`contrast(${a.contrast})`);
   if (a.saturation !== 1) parts.push(`saturate(${a.saturation})`);
+  if (a.sepia) parts.push(`sepia(${a.sepia})`);
+  if (a.grayscale) parts.push(`grayscale(${a.grayscale})`);
+  if (a.hueRotate) parts.push(`hue-rotate(${a.hueRotate}deg)`);
+  if (a.invert) parts.push('invert(1)');
+  if (a.blur) parts.push(`blur(${a.blur}px)`);
   return parts.length ? parts.join(' ') : 'none';
 }
 

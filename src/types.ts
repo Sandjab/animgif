@@ -13,6 +13,11 @@ export interface Adjustments {
   brightness: number;   // 1 = neutre
   contrast: number;     // 1 = neutre
   saturation: number;   // 1 = neutre
+  sepia: number;        // 0 = neutre, 0–1
+  grayscale: number;    // 0 = neutre, 0–1
+  hueRotate: number;    // degrés, 0 = neutre
+  blur: number;         // px, 0 = neutre
+  invert: boolean;
   flipH: boolean;
   flipV: boolean;
   rotate90: 0 | 1 | 2 | 3; // quarts de tour horaires
