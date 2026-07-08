@@ -14,4 +14,11 @@
 8. Boucle ping-pong → aller-retour sans à-coup.
 9. Export 480×480 qualité 80 → GIF téléchargé, l'ouvrir : conforme à la preview,
    boucle infinie.
-10. Boucle « n fois » = 2 → le GIF s'arrête après 2 lectures.
+10. Boucle « n fois » = 2 → le GIF s'arrête après 2 lectures, et la prévisualisation
+    s'arrête d'elle-même après 2 passages.
+11. Sépia à 1 puis N&B à 1 → aperçu suit ; inversion → négatif.
+12. Ajouter Flip 3D (axe Y, 1 tour) → ▶ : l'image « tourne » (écrasement puis miroir).
+13. Cocher « Lecture inversée » → l'animation joue à rebours (preview et GIF exporté).
+14. Décimation « 1 sur 2 » → GIF exporté avec 2× moins de frames, même durée totale.
+15. Lancer un gros export (2048 px, 120 steps, accepter l'avertissement mémoire) puis
+    Annuler pendant le rendu → « Export annulé. », pas de téléchargement, bouton réactivé.
