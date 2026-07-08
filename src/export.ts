@@ -1,6 +1,6 @@
 import { bakeAdjustments } from './adjustments';
-import { pingPongOrder } from './effects/timeline';
-import { computeFrameMatrices, renderFrames } from './frameGenerator';
+import { decimatedOrder } from './effects/timeline';
+import { computeFrameMatrices, renderFramesChunked } from './frameGenerator';
 import type { Store } from './state';
 
 // Garde-fou mémoire : frames RGBA en pleine résolution.
@@ -8,6 +8,8 @@ const MAX_BYTES = 500 * 1024 * 1024;
 
 // Borne une dimension d'export saisie : entier dans [16, 4096], 16 si invalide.
 export const clampDim = (v: number) => Math.min(4096, Math.max(16, Math.round(v) || 16));
+
+class ExportCancelled extends Error {}
 
 export function initExport(store: Store) {
   const btn = document.querySelector<HTMLButtonElement>('#btn-export')!;
@@ -17,6 +19,13 @@ export function initExport(store: Store) {
   const outH = document.querySelector<HTMLInputElement>('#out-h')!;
   const lockRatio = document.querySelector<HTMLInputElement>('#lock-ratio')!;
   const quality = document.querySelector<HTMLInputElement>('#out-quality')!;
+  const cancelBtn = document.querySelector<HTMLButtonElement>('#btn-cancel-export')!;
+  let cancelled = false;
+  let cancelEncode: (() => void) | null = null;
+  cancelBtn.addEventListener('click', () => {
+    cancelled = true;      // interrompt la boucle de rendu
+    cancelEncode?.();      // termine le worker si l'encodage a commencé
+  });
 
   // Verrou des proportions : modifier W ajuste H (et réciproquement) selon l'image source.
   const ratio = () => {
@@ -42,28 +51,44 @@ export function initExport(store: Store) {
     const s = store.get();
     if (!s.sourceImage) return;
 
-    const frameCount = s.loopMode === 'pingpong' ? pingPongOrder(s.steps).length : s.steps;
+    const { order, delayMs } = decimatedOrder(
+      s.steps, s.reverse, s.loopMode === 'pingpong', s.decimation, s.delayMs,
+    );
     // Pic mémoire réel ≈ 3× les frames brutes : frames + concaténation worker + copie wasm.
-    const bytes = frameCount * s.outW * s.outH * 4 * 3;
+    const bytes = order.length * s.outW * s.outH * 4 * 3;
     if (bytes > MAX_BYTES) {
       const go = confirm(
-        `Export volumineux : ${frameCount} frames en ${s.outW}×${s.outH} (~${Math.round(bytes / 1e6)} Mo en mémoire au pic). Continuer ?`,
+        `Export volumineux : ${order.length} frames en ${s.outW}×${s.outH} (~${Math.round(bytes / 1e6)} Mo en mémoire au pic). Continuer ?`,
       );
       if (!go) return;
     }
 
     btn.disabled = true;
+    cancelBtn.hidden = false;
+    cancelled = false;
     progress.hidden = false;
-    progress.removeAttribute('value'); // barre indéterminée (gifski ne remonte pas de progression)
+    progress.max = 1;
+    progress.value = 0;
     try {
-      status.textContent = 'Rendu des frames en pleine résolution…';
       const baked = await bakeAdjustments(s.sourceImage, s.bgRemovedBlob, s.adjustments);
       const view = { imageW: baked.width, imageH: baked.height, outW: s.outW, outH: s.outH };
       const matrices = computeFrameMatrices(s.effects, s.steps, view);
-      let frames = renderFrames(baked, matrices, s.outW, s.outH, s.adjustments.backgroundColor);
-      if (s.loopMode === 'pingpong') frames = pingPongOrder(s.steps).map((i) => frames[i]);
+      const stepFrames = await renderFramesChunked(
+        baked, matrices, s.outW, s.outH, s.adjustments.backgroundColor,
+        (done, total) => {
+          progress.value = done / total;
+          status.textContent = `Rendu des frames… (${done}/${total})`;
+        },
+        () => cancelled,
+      );
+      if (!stepFrames) {
+        status.textContent = 'Export annulé.';
+        return;
+      }
+      const frames = order.map((i) => stepFrames[i]);
 
       status.textContent = 'Encodage gifski… (peut prendre du temps)';
+      progress.removeAttribute('value'); // indéterminée : gifski ne remonte pas de progression
       // repeat : vérifié sur pièce dans le binaire gifski-wasm 2.2.0 installé (rust/src/lib.rs
       // du paquet, et `gif` crate 0.13.1 qu'il utilise en interne) — la doc npm ne précise pas
       // la sémantique. gifski-wasm mappe repeat<0 (ou absent) → boucle infinie ; repeat>=0 →
@@ -73,11 +98,13 @@ export function initExport(store: Store) {
       // voulues, "n fois" dans l'UI, toujours ≥ 1) sur loopCount-1 répétitions supplémentaires,
       // et -1 pour les modes infinite/pingpong.
       const repeat = s.loopMode === 'count' ? s.loopCount - 1 : -1;
-      const gif = await encodeInWorker({
+      const job = encodeInWorker({
         frames, width: s.outW, height: s.outH,
-        frameDurations: frames.map(() => s.delayMs),
+        frameDurations: frames.map(() => delayMs),
         quality: s.quality, repeat,
       });
+      cancelEncode = job.cancel;
+      const gif = await job.promise;
 
       const blob = new Blob([gif], { type: 'image/gif' });
       const a = document.createElement('a');
@@ -87,9 +114,12 @@ export function initExport(store: Store) {
       URL.revokeObjectURL(a.href);
       status.textContent = `GIF exporté (${(blob.size / 1024).toFixed(0)} Ko).`;
     } catch (err) {
-      status.textContent = `Échec de l'export : ${err instanceof Error ? err.message : err}`;
+      if (err instanceof ExportCancelled) status.textContent = 'Export annulé.';
+      else status.textContent = `Échec de l'export : ${err instanceof Error ? err.message : err}`;
     } finally {
+      cancelEncode = null;
       btn.disabled = false;
+      cancelBtn.hidden = true;
       progress.hidden = true;
       progress.value = 0;
     }
@@ -99,15 +129,25 @@ export function initExport(store: Store) {
 function encodeInWorker(payload: {
   frames: ImageData[]; width: number; height: number;
   frameDurations: number[]; quality: number; repeat: number;
-}): Promise<Uint8Array<ArrayBuffer>> {
-  return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL('./workers/gifEncoder.worker.ts', import.meta.url), { type: 'module' });
-    worker.onmessage = (e) => {
-      worker.terminate();
+}): { promise: Promise<Uint8Array<ArrayBuffer>>; cancel: () => void } {
+  let worker: Worker | null = new Worker(
+    new URL('./workers/gifEncoder.worker.ts', import.meta.url),
+    { type: 'module' },
+  );
+  let rejectFn: (e: Error) => void = () => {};
+  const promise = new Promise<Uint8Array<ArrayBuffer>>((resolve, reject) => {
+    rejectFn = reject;
+    worker!.onmessage = (e) => {
+      worker?.terminate();
+      worker = null;
       if (e.data.ok) resolve(e.data.gif);
       else reject(new Error(e.data.error));
     };
-    worker.onerror = (e) => { worker.terminate(); reject(new Error(e.message)); };
+    worker!.onerror = (e) => {
+      worker?.terminate();
+      worker = null;
+      reject(new Error(e.message));
+    };
     // Envoie des vues RGBA brutes et TRANSFÈRE leurs buffers : pas de clonage des pixels.
     // Le ping-pong référence deux fois les mêmes ImageData ; un buffer ne pouvant être
     // transféré qu'une seule fois, les occurrences suivantes sont copiées.
@@ -118,6 +158,16 @@ function encodeInWorker(payload: {
       seen.add(buffer);
       return new Uint8Array(buffer, 0, f.data.byteLength);
     });
-    worker.postMessage({ ...payload, frames }, [...seen]);
+    worker!.postMessage({ ...payload, frames }, [...seen]);
   });
+  return {
+    promise,
+    cancel: () => {
+      if (worker) {
+        worker.terminate();
+        worker = null;
+        rejectFn(new ExportCancelled('Export annulé'));
+      }
+    },
+  };
 }

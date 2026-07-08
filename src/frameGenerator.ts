@@ -7,26 +7,37 @@ export function computeFrameMatrices(effects: Effect[], steps: number, view: Vie
   return sampleTimes(steps).map((t) => composeEffects(effects, t, view));
 }
 
-// Rend chaque frame dans un canvas de sortie. `baked` = image retouchée (canvas source).
-// Navigateur uniquement (non couvert par Vitest) — vérifié lors de l'export (Task 14).
-export function renderFrames(
+// Rend les frames par tranches en cédant la main entre chaque tranche : l'UI reste
+// réactive, la progression s'affiche, et l'annulation est possible. Retourne null si annulé.
+// Navigateur uniquement (non couvert par Vitest) — vérifié lors de l'export.
+export async function renderFramesChunked(
   baked: HTMLCanvasElement,
   matrices: Mat[],
   outW: number,
   outH: number,
   backgroundColor: string,
-): ImageData[] {
+  onProgress: (done: number, total: number) => void,
+  isCancelled: () => boolean,
+  chunkSize = 4,
+): Promise<ImageData[] | null> {
   const canvas = document.createElement('canvas');
   canvas.width = outW;
   canvas.height = outH;
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-  return matrices.map((m) => {
+  const frames: ImageData[] = [];
+  for (let i = 0; i < matrices.length; i++) {
+    if (isCancelled()) return null;
+    const m = matrices[i];
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, outW, outH);
     ctx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
     ctx.drawImage(baked, 0, 0);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    return ctx.getImageData(0, 0, outW, outH);
-  });
+    frames.push(ctx.getImageData(0, 0, outW, outH));
+    if ((i + 1) % chunkSize === 0 || i === matrices.length - 1) {
+      onProgress(i + 1, matrices.length);
+      await new Promise((r) => setTimeout(r, 0)); // cède la main (repaint + événements)
+    }
+  }
+  return frames;
 }
