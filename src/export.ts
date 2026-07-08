@@ -34,6 +34,9 @@ export function initExport(store: Store) {
     store.update({ outH: h, outW: clampDim(Number(outW.value)) });
   });
   quality.addEventListener('input', () => store.update({ quality: Number(quality.value) }));
+  document.querySelector<HTMLSelectElement>('#out-decimation')!.addEventListener('change', (e) => {
+    store.update({ decimation: Number((e.target as HTMLSelectElement).value) as 1 | 2 | 3 });
+  });
 
   btn.addEventListener('click', async () => {
     const s = store.get();

@@ -11,6 +11,8 @@ function defaultEffect(kind: string, store: Store): Effect {
       return { kind: 'rotation', fromDeg: 0, toDeg: 360, easing: 'linear' };
     case 'translation':
       return { kind: 'translation', dx: 50, dy: 0, easing: 'easeInOut' };
+    case 'spin3d':
+      return { kind: 'spin3d', axis: 'y', turns: 1, easing: 'linear' };
     default:
       return { kind: 'bounce', amplitude: 30, oscillations: 1 };
   }
@@ -89,6 +91,22 @@ function renderEffectCard(effect: Effect, index: number, store: Store): HTMLElem
       card.appendChild(numberField('Amplitude (px)', effect.amplitude, (amplitude) => patch({ amplitude })));
       card.appendChild(numberField('Oscillations', effect.oscillations, (oscillations) => patch({ oscillations })));
       break;
+    case 'spin3d': {
+      const axis = document.createElement('label');
+      axis.textContent = 'Axe ';
+      const select = document.createElement('select');
+      for (const [v, txt] of [['y', 'Vertical (Y)'], ['x', 'Horizontal (X)']] as const) {
+        const opt = document.createElement('option');
+        opt.value = v; opt.textContent = txt; opt.selected = v === effect.axis;
+        select.appendChild(opt);
+      }
+      select.addEventListener('change', () => patch({ axis: select.value as 'x' | 'y' }));
+      axis.appendChild(select);
+      card.appendChild(axis);
+      card.appendChild(numberField('Tours', effect.turns, (turns) => patch({ turns: Math.max(0.25, turns) })));
+      card.appendChild(easingField(effect.easing, (easing) => patch({ easing })));
+      break;
+    }
   }
   return card;
 }
@@ -107,6 +125,10 @@ export function initAnimPanel(store: Store) {
   document.querySelector<HTMLInputElement>('#anim-steps')!.addEventListener('input', (e) => {
     const v = Math.max(2, Math.min(120, Number((e.target as HTMLInputElement).value) || 2));
     store.update({ steps: v });
+  });
+
+  document.querySelector<HTMLInputElement>('#anim-reverse')!.addEventListener('change', (e) => {
+    store.update({ reverse: (e.target as HTMLInputElement).checked });
   });
 
   // Re-render seulement quand la STRUCTURE de la liste change (ajout/suppression) :

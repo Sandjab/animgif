@@ -48,8 +48,10 @@
             <button data-effect="rotation">+ Rotation</button>
             <button data-effect="translation">+ Translation</button>
             <button data-effect="bounce">+ Bounce</button>
+            <button data-effect="spin3d">+ Flip 3D</button>
           </div>
           <label>Steps <input id="anim-steps" type="number" min="2" max="120" value="24" /></label>
+          <label><input id="anim-reverse" type="checkbox" /> Lecture inversée</label>
           <hr />
           <div class="row">
             <button id="btn-play">▶ Lecture</button>
@@ -70,6 +72,13 @@
           <label>Hauteur <input id="out-h" type="number" min="16" max="4096" value="480" /></label>
           <label><input id="lock-ratio" type="checkbox" checked /> Conserver les proportions</label>
           <label>Qualité <input id="out-quality" type="range" min="1" max="100" value="80" /></label>
+          <label>Frames exportées
+            <select id="out-decimation">
+              <option value="1">Toutes</option>
+              <option value="2">1 sur 2</option>
+              <option value="3">1 sur 3</option>
+            </select>
+          </label>
           <button id="btn-export">Exporter le GIF</button>
           <progress id="export-progress" max="1" value="0" hidden></progress>
           <p id="export-status" class="hint"></p>

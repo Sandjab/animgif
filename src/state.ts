@@ -9,6 +9,8 @@ export interface AppState {
   delayMs: number;    // délai inter-frames
   loopMode: LoopMode;
   loopCount: number;  // utilisé si loopMode === 'count'
+  reverse: boolean;   // lecture inversée (preview + export)
+  decimation: 1 | 2 | 3; // export : 1 frame sur n, délai × n
   outW: number;       // dimensions d'export
   outH: number;
   quality: number;    // gifski 1-100
@@ -29,6 +31,8 @@ export function initialState(): AppState {
     delayMs: 80,
     loopMode: 'infinite',
     loopCount: 1,
+    reverse: false,
+    decimation: 1,
     outW: 480,
     outH: 480,
     quality: 80,
