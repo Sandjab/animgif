@@ -34,7 +34,7 @@ export function initSourcePanel(store: Store) {
   });
 
   // Sliders de retouche
-  const bind = (id: string, key: 'brightness' | 'contrast' | 'saturation') => {
+  const bind = (id: string, key: 'brightness' | 'contrast' | 'saturation' | 'sepia' | 'grayscale' | 'hueRotate' | 'blur') => {
     document.querySelector<HTMLInputElement>(id)!.addEventListener('input', (e) => {
       const v = Number((e.target as HTMLInputElement).value);
       store.update({ adjustments: { ...store.get().adjustments, [key]: v } });
@@ -43,6 +43,13 @@ export function initSourcePanel(store: Store) {
   bind('#adj-brightness', 'brightness');
   bind('#adj-contrast', 'contrast');
   bind('#adj-saturation', 'saturation');
+  bind('#adj-sepia', 'sepia');
+  bind('#adj-grayscale', 'grayscale');
+  bind('#adj-hue', 'hueRotate');
+  bind('#adj-blur', 'blur');
+  document.querySelector<HTMLInputElement>('#adj-invert')!.addEventListener('change', (e) => {
+    store.update({ adjustments: { ...store.get().adjustments, invert: (e.target as HTMLInputElement).checked } });
+  });
 
   document.querySelector('#btn-flip-h')!.addEventListener('click', () => {
     const a = store.get().adjustments;
