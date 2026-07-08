@@ -106,7 +106,15 @@ function encodeInWorker(payload: {
     };
     worker.onerror = (e) => { worker.terminate(); reject(new Error(e.message)); };
     // Envoie des vues RGBA brutes et TRANSFÈRE leurs buffers : pas de clonage des pixels.
-    const frames = payload.frames.map((f) => new Uint8Array(f.data.buffer, 0, f.data.byteLength));
-    worker.postMessage({ ...payload, frames }, frames.map((f) => f.buffer));
+    // Le ping-pong référence deux fois les mêmes ImageData ; un buffer ne pouvant être
+    // transféré qu'une seule fois, les occurrences suivantes sont copiées.
+    const seen = new Set<ArrayBuffer>();
+    const frames = payload.frames.map((f) => {
+      const buffer = f.data.buffer as ArrayBuffer;
+      if (seen.has(buffer)) return new Uint8Array(f.data); // copie : frame dupliquée
+      seen.add(buffer);
+      return new Uint8Array(buffer, 0, f.data.byteLength);
+    });
+    worker.postMessage({ ...payload, frames }, [...seen]);
   });
 }
