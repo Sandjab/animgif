@@ -1,0 +1,19 @@
+:root { color-scheme: dark; font-family: system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #1e1e1e; color: #ddd; }
+#app { display: grid; grid-template-columns: 260px 1fr 300px; height: 100vh; }
+aside { padding: 12px; overflow-y: auto; background: #252526; }
+aside h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; color: #999; }
+#panel-canvas { display: flex; align-items: center; justify-content: center; position: relative; }
+#view { max-width: 100%; max-height: 100%; background: #111; }
+label { display: block; margin: 10px 0 4px; font-size: 13px; }
+input[type='range'] { width: 100%; }
+.row { display: flex; gap: 6px; margin: 8px 0; }
+button { background: #3a3a3d; color: #ddd; border: 1px solid #555; border-radius: 4px; padding: 6px 10px; cursor: pointer; }
+button:hover { background: #4a4a4d; }
+.hint { font-size: 12px; color: #888; }
+#dropzone { border: 2px dashed #555; border-radius: 8px; padding: 24px 12px; text-align: center; }
+#dropzone.dragover { border-color: #4da3ff; background: #2a3a4a; }
+.effect-card { border: 1px solid #444; border-radius: 6px; padding: 8px; margin: 8px 0; }
+.effect-card h3 { margin: 0 0 6px; font-size: 13px; display: flex; justify-content: space-between; }
+progress { width: 100%; }

@@ -1,0 +1,63 @@
+import { bakeAdjustments } from '../adjustments';
+import { composeEffects } from '../effects/effects';
+import type { Store } from '../state';
+
+const PREVIEW_MAX = 480; // côté max de l'aperçu (basse résolution pour la fluidité)
+
+export function previewSize(store: Store): { w: number; h: number } {
+  const { outW, outH } = store.get();
+  const s = Math.min(1, PREVIEW_MAX / Math.max(outW, outH));
+  return { w: Math.round(outW * s), h: Math.round(outH * s) };
+}
+
+export function initCanvasView(store: Store) {
+  const canvas = document.querySelector<HTMLCanvasElement>('#view')!;
+  const hint = document.querySelector<HTMLElement>('#canvas-hint')!;
+  const ctx = canvas.getContext('2d')!;
+  let baked: HTMLCanvasElement | null = null;
+  let bakeToken = 0;
+  let overlay: (() => void) | null = null; // hook post-dessin (éditeur Ken Burns, Task 12)
+
+  async function rebake() {
+    const { sourceImage, bgRemovedBlob, adjustments } = store.get();
+    if (!sourceImage) return;
+    const token = ++bakeToken;
+    const result = await bakeAdjustments(sourceImage, bgRemovedBlob, adjustments);
+    if (token !== bakeToken) return; // une retouche plus récente est en cours
+    baked = result;
+    drawFrame(0);
+  }
+
+  // Dessine la frame à t donné (utilisé par l'aperçu statique et le lecteur).
+  function drawFrame(t: number) {
+    if (!baked) return;
+    const { w, h } = previewSize(store);
+    canvas.width = w;
+    canvas.height = h;
+    const view = { imageW: baked.width, imageH: baked.height, outW: w, outH: h };
+    const m = composeEffects(store.get().effects, t, view);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = store.get().adjustments.backgroundColor;
+    ctx.fillRect(0, 0, w, h);
+    ctx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
+    ctx.drawImage(baked, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (t === 0) overlay?.(); // l'overlay d'édition n'apparaît que sur l'aperçu statique
+  }
+
+  store.subscribe(() => {
+    const hasImage = store.get().sourceImage !== null;
+    hint.hidden = hasImage;
+    document.querySelector<HTMLElement>('#adjustments')!.hidden = !hasImage;
+    document.querySelector<HTMLElement>('#anim-controls')!.hidden = !hasImage;
+    rebake();
+  });
+
+  return {
+    drawFrame,
+    getBaked: () => baked,
+    setOverlay: (fn: (() => void) | null) => { overlay = fn; },
+  };
+}
+
+export type CanvasView = ReturnType<typeof initCanvasView>;
