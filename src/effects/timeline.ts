@@ -4,12 +4,26 @@ export function sampleTimes(steps: number): number[] {
   return Array.from({ length: steps }, (_, i) => i / (steps - 1));
 }
 
-// Ordre des index de frames pour une boucle ping-pong : 0..n-1 puis n-2..1
-// (les extrémités ne sont pas dupliquées, la boucle GIF enchaîne naturellement).
-export function pingPongOrder(frameCount: number): number[] {
-  const forward = Array.from({ length: frameCount }, (_, i) => i);
-  const back = forward.slice(1, -1).reverse();
-  return [...forward, ...back];
+// Ordre des frames : ordre de base (éventuellement inversé), puis aller-retour
+// ping-pong sans dupliquer les extrémités.
+export function frameOrder(frameCount: number, reverse: boolean, pingpong: boolean): number[] {
+  const base = Array.from({ length: frameCount }, (_, i) => (reverse ? frameCount - 1 - i : i));
+  if (!pingpong) return base;
+  return [...base, ...base.slice(1, -1).reverse()];
+}
+
+// Conservé pour compat (tests v1) : ping-pong sur l'ordre normal.
+export const pingPongOrder = (frameCount: number) => frameOrder(frameCount, false, true);
+
+// Réduction de poids : ne garde qu'une frame sur n de l'ordre FINAL et multiplie le
+// délai par n — la durée totale de l'animation est préservée.
+export function decimate(
+  order: number[],
+  delayMs: number,
+  n: 1 | 2 | 3,
+): { order: number[]; delayMs: number } {
+  if (n === 1) return { order, delayMs };
+  return { order: order.filter((_, i) => i % n === 0), delayMs: delayMs * n };
 }
 
 export const delayToFps = (delayMs: number) => 1000 / delayMs;
