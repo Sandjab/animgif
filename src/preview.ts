@@ -49,4 +49,15 @@ export function initPreview(store: Store, drawFrame: (t: number, showOverlay?: b
   loopCount.addEventListener('input', () => {
     store.update({ loopCount: Math.max(1, Number(loopCount.value) || 1) });
   });
+
+  // Si les paramètres qui définissent la séquence changent en cours de lecture,
+  // on repart au début : sinon le compteur monotone déclenche un arrêt intempestif
+  // du mode « n fois » (ex. passage infini → n fois après 30 frames jouées).
+  let lastKey = '';
+  store.subscribe(() => {
+    const s = store.get();
+    const key = `${s.steps}|${s.loopMode}|${s.loopCount}|${s.reverse}`;
+    if (timer !== null && key !== lastKey) frameIdx = 0;
+    lastKey = key;
+  });
 }

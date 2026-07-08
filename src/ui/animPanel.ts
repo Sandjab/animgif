@@ -103,7 +103,8 @@ function renderEffectCard(effect: Effect, index: number, store: Store): HTMLElem
       select.addEventListener('change', () => patch({ axis: select.value as 'x' | 'y' }));
       axis.appendChild(select);
       card.appendChild(axis);
-      card.appendChild(numberField('Tours', effect.turns, (turns) => patch({ turns: Math.max(0.25, turns) })));
+      card.appendChild(numberField('Tours', effect.turns, (turns) =>
+        patch({ turns: Number.isFinite(turns) ? Math.max(0.25, turns) : 0.25 })));
       card.appendChild(easingField(effect.easing, (easing) => patch({ easing })));
       break;
     }
