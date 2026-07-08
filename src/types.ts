@@ -1,0 +1,21 @@
+export interface Rect { x: number; y: number; w: number; h: number }
+
+export type Easing = 'linear' | 'easeInOut' | 'bounce';
+
+export type Effect =
+  | { kind: 'kenBurns'; from: Rect; to: Rect; easing: Easing }
+  | { kind: 'rotation'; fromDeg: number; toDeg: number; easing: Easing }
+  | { kind: 'translation'; dx: number; dy: number; easing: Easing }
+  | { kind: 'bounce'; amplitude: number; oscillations: number };
+
+export interface Adjustments {
+  brightness: number;   // 1 = neutre
+  contrast: number;     // 1 = neutre
+  saturation: number;   // 1 = neutre
+  flipH: boolean;
+  flipV: boolean;
+  rotate90: 0 | 1 | 2 | 3; // quarts de tour horaires
+  backgroundColor: string; // couleur CSS, ex. '#ffffff'
+}
+
+export type LoopMode = 'infinite' | 'count' | 'pingpong';
