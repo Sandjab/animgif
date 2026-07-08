@@ -29,7 +29,7 @@ export function initCanvasView(store: Store) {
   }
 
   // Dessine la frame à t donné (utilisé par l'aperçu statique et le lecteur).
-  function drawFrame(t: number) {
+  function drawFrame(t: number, showOverlay = true) {
     if (!baked) return;
     const { w, h } = previewSize(store);
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
@@ -41,7 +41,7 @@ export function initCanvasView(store: Store) {
     ctx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
     ctx.drawImage(baked, 0, 0);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    if (t === 0) overlay?.(); // l'overlay d'édition n'apparaît que sur l'aperçu statique
+    if (t === 0 && showOverlay) overlay?.(); // jamais d'overlay d'édition pendant la lecture
   }
 
   let lastSource: HTMLImageElement | null = null;

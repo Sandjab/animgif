@@ -82,13 +82,17 @@ export function initKenBurnsEditor(store: Store, canvasView: CanvasView) {
     const m = screenMat();
     const sp = apply(m, p);
     const tol = HANDLE; // tolérance en px écran
-    for (const [name, rect] of [['to', kb.to], ['from', kb.from]] as const) {
+    const rects = [['to', kb.to], ['from', kb.from]] as const;
+    // Toutes les poignées d'abord : un rect englobant ne doit pas masquer les coins de l'autre.
+    for (const [name, rect] of rects) {
       const cs = corners(rect).map((c) => apply(m, c));
       for (let i = 0; i < 4; i++) {
         if (Math.abs(cs[i].x - sp.x) < tol && Math.abs(cs[i].y - sp.y) < tol) {
           return { rect: name, mode: 'resize', corner: i as 0 | 1 | 2 | 3, orig: { ...rect } };
         }
       }
+    }
+    for (const [name, rect] of rects) {
       if (p.x >= rect.x && p.x <= rect.x + rect.w && p.y >= rect.y && p.y <= rect.y + rect.h) {
         return { rect: name, mode: 'move', startX: p.x, startY: p.y, orig: { ...rect } };
       }
@@ -104,7 +108,7 @@ export function initKenBurnsEditor(store: Store, canvasView: CanvasView) {
   canvas.addEventListener('pointerdown', (ev) => {
     const p = toImageCoords(ev);
     drag = hitTest(p);
-    if (drag) canvas.setPointerCapture(ev.pointerId);
+    if (drag) { try { canvas.setPointerCapture(ev.pointerId); } catch { /* pointeur déjà relâché */ } }
   });
 
   canvas.addEventListener('pointermove', (ev) => {
@@ -115,13 +119,14 @@ export function initKenBurnsEditor(store: Store, canvasView: CanvasView) {
       patchKb(drag.rect, { ...orig, x: orig.x + (p.x - drag.startX), y: orig.y + (p.y - drag.startY) });
     } else {
       // Redimensionnement par coin, ratio de sortie conservé, coin opposé fixe.
+      // La taille suit l'axe dominant du geste (x ou y) pour rester naturelle.
       const { outW, outH } = store.get();
       const ratio = outW / outH;
       const anchor = corners(orig)[(drag.corner + 2) % 4];
-      const w = Math.max(16, Math.abs(p.x - anchor.x));
+      const w = Math.max(16, Math.abs(p.x - anchor.x), Math.abs(p.y - anchor.y) * ratio);
       const h = w / ratio;
       patchKb(drag.rect, {
-        x: Math.min(anchor.x, p.x < anchor.x ? anchor.x - w : anchor.x),
+        x: p.x < anchor.x ? anchor.x - w : anchor.x,
         y: p.y < anchor.y ? anchor.y - h : anchor.y,
         w, h,
       });

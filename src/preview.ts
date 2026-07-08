@@ -1,7 +1,7 @@
 import { pingPongOrder, sampleTimes } from './effects/timeline';
 import type { Store } from './state';
 
-export function initPreview(store: Store, drawFrame: (t: number) => void) {
+export function initPreview(store: Store, drawFrame: (t: number, showOverlay?: boolean) => void) {
   const btn = document.querySelector<HTMLButtonElement>('#btn-play')!;
   const delaySlider = document.querySelector<HTMLInputElement>('#anim-delay')!;
   const delayLabel = document.querySelector<HTMLElement>('#delay-label')!;
@@ -19,7 +19,7 @@ export function initPreview(store: Store, drawFrame: (t: number) => void) {
   function tick() {
     const seq = frameSequence();
     const times = sampleTimes(store.get().steps);
-    drawFrame(times[seq[frameIdx % seq.length]]);
+    drawFrame(times[seq[frameIdx % seq.length]], false);
     frameIdx++;
     timer = window.setTimeout(tick, store.get().delayMs);
   }

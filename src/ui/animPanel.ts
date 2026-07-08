@@ -108,11 +108,15 @@ export function initAnimPanel(store: Store) {
     store.update({ steps: v });
   });
 
-  let lastEffects: unknown = null;
+  // Re-render seulement quand la STRUCTURE de la liste change (ajout/suppression) :
+  // re-rendre à chaque édition de valeur détruirait l'input en cours de frappe (perte de focus).
+  // Les index capturés par les cartes restent valides tant que la structure ne change pas.
+  let lastSignature: string | null = null;
   store.subscribe(() => {
     const { effects } = store.get();
-    if (effects === lastEffects) return; // re-render seulement si la liste a changé
-    lastEffects = effects;
+    const signature = effects.map((e) => e.kind).join(',');
+    if (signature === lastSignature) return;
+    lastSignature = signature;
     list.replaceChildren(...effects.map((e, i) => renderEffectCard(e, i, store)));
   });
 }
