@@ -17,8 +17,9 @@ export async function bakeAdjustments(
 ): Promise<HTMLCanvasElement> {
   let img: CanvasImageSource = source;
   let w = source.naturalWidth, h = source.naturalHeight;
+  let bmp: ImageBitmap | null = null;
   if (bgRemovedBlob) {
-    const bmp = await createImageBitmap(bgRemovedBlob);
+    bmp = await createImageBitmap(bgRemovedBlob);
     img = bmp; w = bmp.width; h = bmp.height;
   }
   const rotated = adj.rotate90 % 2 === 1;
@@ -31,5 +32,6 @@ export async function bakeAdjustments(
   ctx.rotate((adj.rotate90 * Math.PI) / 2);
   ctx.scale(adj.flipH ? -1 : 1, adj.flipV ? -1 : 1);
   ctx.drawImage(img, -w / 2, -h / 2);
+  bmp?.close(); // libère les pixels décodés — bake appelé à chaque update du store
   return canvas;
 }

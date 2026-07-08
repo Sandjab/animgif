@@ -38,7 +38,10 @@ export function createStore(initial: AppState) {
   let state = initial;
   const listeners = new Set<(s: AppState) => void>();
   return {
+    // Contrat : ne jamais muter l'objet retourné — toujours passer par update().
     get: () => state,
+    // Fusion superficielle : les champs imbriqués (adjustments, effects) doivent être
+    // re-spreadés en entier par l'appelant.
     update(patch: Partial<AppState>) {
       state = { ...state, ...patch };
       listeners.forEach((fn) => fn(state));
