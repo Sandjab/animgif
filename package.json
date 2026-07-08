@@ -1,0 +1,21 @@
+{
+  "name": "animgif",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "@imgly/background-removal": "^1.7.0",
+    "gifski-wasm": "^2.2.0"
+  }
+}
