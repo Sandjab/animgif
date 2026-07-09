@@ -1,5 +1,5 @@
 import { bakeAdjustments } from './adjustments';
-import { decimatedOrder } from './effects/timeline';
+import { decimatedOrder, delayToFps } from './effects/timeline';
 import { computeFrameMatrices, renderFramesChunked } from './frameGenerator';
 import { evenDim, qualityToBitrate } from './mp4Params';
 import type { Store } from './state';
@@ -146,7 +146,7 @@ export function initExport(store: Store) {
         // Encodage MP4 : progression déterminée aux deux phases ; annulation par le drapeau
         // `cancelled` (sondé dans encodeMp4 → output.cancel()).
         const { encodeMp4 } = await import('./mp4');
-        const fps = 1000 / delayMs;
+        const fps = delayToFps(delayMs);
         status.textContent = `Encodage MP4… (0/${frames.length})`;
         const blob = await encodeMp4(frames, {
           width, height, fps, bitrate: qualityToBitrate(s.quality, width, height, fps),
