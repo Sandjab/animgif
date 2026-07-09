@@ -36,13 +36,16 @@ sciemment.
 ### 2. UI — sélecteur de format
 - Radios **Format** (« GIF » / « MP4 ») en tête du bloc export.
 - Libellé du bouton d'export dynamique : « Exporter le GIF » / « Exporter le MP4 ».
-- **Détection de support** au démarrage via le helper d'encodabilité de mediabunny
-  (`canEncode`/`getFirstEncodableVideoCodec` pour `avc`). Si le navigateur ne peut pas
-  encoder de l'AVC : radio MP4 **désactivée** + texte `MP4 non supporté par ce
-  navigateur.` (le format reste sur GIF). La vérification est asynchrone ; l'UI démarre
-  en GIF et débloque MP4 quand la réponse arrive.
-- Ligne d'aide affichée quand MP4 est actif : `Une seule passe ; la boucle est gérée par
-  le lecteur.`
+- **Détection de support paresseuse**, à la **première sélection du format MP4** (et non
+  au démarrage) : mediabunny — donc son poids — n'est téléchargé que si l'utilisateur
+  engage le MP4. Cohérent avec le soin du projet pour ce que les visiteurs téléchargent
+  (détourage IA en chargement paresseux). À la sélection, on charge le module via `import()`
+  et on appelle le helper d'encodabilité `canEncode('avc')`. Si le navigateur ne peut pas
+  encoder de l'AVC : on repasse en GIF, la radio MP4 est **désactivée** et un texte
+  `MP4 non supporté par ce navigateur.` s'affiche. Les visiteurs GIF-only ne téléchargent
+  jamais mediabunny.
+- Ligne d'aide affichée quand MP4 est actif et supporté : `Une seule passe ; la boucle est
+  gérée par le lecteur.` (même élément que le message de non-support, texte selon l'état).
 
 ### 3. Qualité — curseur réutilisé, remappé en bitrate
 - Le curseur « Qualité » (1–100) pilote gifski en GIF **et** est remappé en bitrate pour
