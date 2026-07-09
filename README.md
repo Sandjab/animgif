@@ -10,7 +10,7 @@ aucune donnée envoyée à un serveur.
 - Import par fichier ou glisser-déposer
 - Retouches : luminosité, contraste, saturation, miroir, rotation 90°, suppression du fond (IA locale), couleur de fond
 - Filtres : sépia, noir & blanc, teinte, flou, inversion
-- Effets d'animation composables : zoom/Ken Burns (rectangles départ/arrivée), rotation, translation, bounce, flip 3D, pulse, shake, balancement — avec easing (linéaire, ease in/out, rebond, élastique)
+- Effets d'animation composables : zoom/Ken Burns (rectangles départ/arrivée), rotation, translation, bounce, flip 3D, pulse, shake, balancement, mise au point (flou↔net) — avec easing (linéaire, ease in/out, rebond, élastique)
 - Prévisualisation : délai réglable, boucle infinie / n fois / ping-pong, lecture inversée
 - Export GIF haute qualité (encodeur [gifski](https://github.com/ImageOptim/gifski) en WebAssembly), dimensions et qualité configurables, décimation de frames (poids réduit, durée préservée), progression et annulation
 - Export MP4/H.264 (WebCodecs via [mediabunny](https://github.com/vanilagy/mediabunny), chargé à la demande ; requiert un navigateur compatible WebCodecs) : une seule passe, la boucle est gérée par le lecteur

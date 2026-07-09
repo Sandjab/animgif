@@ -33,3 +33,7 @@
 20. Ajouter Pulse, Shake et Balancement (un à la fois) → ▶ : battement, secousse et
     pendule visibles, boucle sans à-coup. Sur un effet Rotation, choisir l'easing
     « Élastique » → la rotation dépasse puis se stabilise.
+21. Ajouter « Mise au point » (défaut 0→8 px) → ▶ : l'image se floute progressivement puis
+    revient nette à la boucle. Régler Flou départ = 8, Flou arrivée = 0 → sens inverse
+    (flou→net). Exporter un GIF **et** un MP4 contenant l'effet → le flou animé est présent
+    dans les deux, cohérent avec la preview.
