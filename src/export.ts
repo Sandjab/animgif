@@ -1,6 +1,7 @@
 import { bakeAdjustments } from './adjustments';
 import { decimatedOrder } from './effects/timeline';
 import { computeFrameMatrices, renderFramesChunked } from './frameGenerator';
+import { evenDim, qualityToBitrate } from './mp4Params';
 import type { Store } from './state';
 
 // Garde-fou mémoire : frames RGBA en pleine résolution.
@@ -11,6 +12,15 @@ export const clampDim = (v: number) => Math.min(4096, Math.max(16, Math.round(v)
 
 class ExportCancelled extends Error {}
 
+// Déclenche le téléchargement d'un blob sous le nom donné.
+function download(blob: Blob, filename: string) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 export function initExport(store: Store) {
   const btn = document.querySelector<HTMLButtonElement>('#btn-export')!;
   const progress = document.querySelector<HTMLProgressElement>('#export-progress')!;
@@ -20,11 +30,46 @@ export function initExport(store: Store) {
   const lockRatio = document.querySelector<HTMLInputElement>('#lock-ratio')!;
   const quality = document.querySelector<HTMLInputElement>('#out-quality')!;
   const cancelBtn = document.querySelector<HTMLButtonElement>('#btn-cancel-export')!;
+  const fmtGif = document.querySelector<HTMLInputElement>('#fmt-gif')!;
+  const fmtMp4 = document.querySelector<HTMLInputElement>('#fmt-mp4')!;
+  const mp4Hint = document.querySelector<HTMLElement>('#mp4-hint')!;
   let cancelled = false;
   let cancelEncode: (() => void) | null = null;
   cancelBtn.addEventListener('click', () => {
-    cancelled = true;      // interrompt la boucle de rendu
-    cancelEncode?.();      // termine le worker si l'encodage a commencé
+    cancelled = true;      // interrompt la boucle de rendu ET d'encodage MP4
+    cancelEncode?.();      // termine le worker gifski si l'encodage GIF a commencé
+  });
+
+  // Reflète le format courant dans l'UI : libellé du bouton et ligne d'aide MP4.
+  const refreshFormatUI = () => {
+    const mp4 = store.get().format === 'mp4';
+    btn.textContent = mp4 ? 'Exporter le MP4' : 'Exporter le GIF';
+    mp4Hint.hidden = !mp4;
+    if (mp4) mp4Hint.textContent = 'Une seule passe ; la boucle est gérée par le lecteur.';
+  };
+  fmtGif.addEventListener('change', () => {
+    if (!fmtGif.checked) return;
+    store.update({ format: 'gif' });
+    refreshFormatUI();
+  });
+  // À la première sélection du MP4 : charge mediabunny (paresseux) et vérifie le support
+  // d'encodage AVC. Si absent, repasse en GIF et désactive l'option.
+  fmtMp4.addEventListener('change', async () => {
+    if (!fmtMp4.checked) return;
+    const { isMp4Supported } = await import('./mp4');
+    const supported = await isMp4Supported();
+    if (!fmtMp4.checked) return; // l'utilisateur a changé de format pendant le chargement async
+    if (!supported) {
+      fmtMp4.disabled = true;
+      fmtGif.checked = true;
+      store.update({ format: 'gif' });
+      refreshFormatUI();       // rétablit le libellé du bouton (et masque l'aide MP4)…
+      mp4Hint.hidden = false;  // …puis affiche le message de non-support par-dessus.
+      mp4Hint.textContent = 'MP4 non supporté par ce navigateur.';
+      return;
+    }
+    store.update({ format: 'mp4' });
+    refreshFormatUI();
   });
 
   // Verrou des proportions : modifier W ajuste H (et réciproquement) selon l'image source.
@@ -50,17 +95,22 @@ export function initExport(store: Store) {
   btn.addEventListener('click', async () => {
     const s = store.get();
     if (!s.sourceImage) return;
+    const mp4 = s.format === 'mp4';
 
     const { order, delayMs } = decimatedOrder(
       s.steps, s.reverse, s.loopMode === 'pingpong', s.decimation, s.delayMs,
     );
+    // Dimensions paires imposées par H.264 pour le MP4 (le rendu se fait à ces dimensions).
+    const width = mp4 ? evenDim(s.outW) : s.outW;
+    const height = mp4 ? evenDim(s.outH) : s.outH;
     // Seules les frames réellement référencées sont rendues (la décimation peut en sauter 2/3).
     const needed = [...new Set(order)].sort((a, b) => a - b);
-    // Pic mémoire ≈ frames rendues + 2× la séquence encodée (concaténation worker + copie wasm).
-    const bytes = (needed.length + 2 * order.length) * s.outW * s.outH * 4;
+    // Pic mémoire : GIF ≈ frames rendues + 2× la séquence (concaténation worker + copie wasm) ;
+    // MP4 ≈ frames rendues seules (file d'encodeur bornée, pas de concaténation).
+    const bytes = (needed.length + (mp4 ? 0 : 2 * order.length)) * width * height * 4;
     if (bytes > MAX_BYTES) {
       const go = confirm(
-        `Export volumineux : ${order.length} frames en ${s.outW}×${s.outH} (~${Math.round(bytes / 1e6)} Mo en mémoire au pic). Continuer ?`,
+        `Export volumineux : ${order.length} frames en ${width}×${height} (~${Math.round(bytes / 1e6)} Mo en mémoire au pic). Continuer ?`,
       );
       if (!go) return;
     }
@@ -73,10 +123,10 @@ export function initExport(store: Store) {
     progress.value = 0;
     try {
       const baked = await bakeAdjustments(s.sourceImage, s.bgRemovedBlob, s.adjustments);
-      const view = { imageW: baked.width, imageH: baked.height, outW: s.outW, outH: s.outH };
+      const view = { imageW: baked.width, imageH: baked.height, outW: width, outH: height };
       const matrices = computeFrameMatrices(s.effects, s.steps, view);
       const rendered = await renderFramesChunked(
-        baked, needed.map((i) => matrices[i]), s.outW, s.outH, s.adjustments.backgroundColor,
+        baked, needed.map((i) => matrices[i]), width, height, s.adjustments.backgroundColor,
         (done, total) => {
           progress.value = done / total;
           status.textContent = `Rendu des frames… (${done}/${total})`;
@@ -92,6 +142,29 @@ export function initExport(store: Store) {
       const frameByIndex = new Map(needed.map((idx, j) => [idx, rendered[j]]));
       const frames = order.map((i) => frameByIndex.get(i)!);
 
+      if (mp4) {
+        // Encodage MP4 : progression déterminée aux deux phases ; annulation par le drapeau
+        // `cancelled` (sondé dans encodeMp4 → output.cancel()).
+        const { encodeMp4 } = await import('./mp4');
+        const fps = 1000 / delayMs;
+        status.textContent = `Encodage MP4… (0/${frames.length})`;
+        const blob = await encodeMp4(frames, {
+          width, height, fps, bitrate: qualityToBitrate(s.quality, width, height, fps),
+          onProgress: (done, total) => {
+            progress.value = done / total;
+            status.textContent = `Encodage MP4… (${done}/${total})`;
+          },
+          isCancelled: () => cancelled,
+        });
+        if (!blob) {
+          status.textContent = 'Export annulé.';
+          return;
+        }
+        download(blob, 'animation.mp4');
+        status.textContent = `MP4 exporté (${(blob.size / 1024).toFixed(0)} Ko).`;
+        return;
+      }
+
       status.textContent = 'Encodage gifski… (peut prendre du temps)';
       progress.removeAttribute('value'); // indéterminée : gifski ne remonte pas de progression
       // repeat : vérifié sur pièce dans le binaire gifski-wasm 2.2.0 installé (rust/src/lib.rs
@@ -104,20 +177,15 @@ export function initExport(store: Store) {
       // et -1 pour les modes infinite/pingpong.
       const repeat = s.loopMode === 'count' ? s.loopCount - 1 : -1;
       const job = encodeInWorker({
-        frames, width: s.outW, height: s.outH,
+        frames, width, height,
         frameDurations: frames.map(() => delayMs),
         quality: s.quality, repeat,
       });
       cancelEncode = job.cancel;
       const gif = await job.promise;
 
-      const blob = new Blob([gif], { type: 'image/gif' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'animation.gif';
-      a.click();
-      URL.revokeObjectURL(a.href);
-      status.textContent = `GIF exporté (${(blob.size / 1024).toFixed(0)} Ko).`;
+      download(new Blob([gif], { type: 'image/gif' }), 'animation.gif');
+      status.textContent = `GIF exporté (${(gif.byteLength / 1024).toFixed(0)} Ko).`;
     } catch (err) {
       if (err instanceof ExportCancelled) status.textContent = 'Export annulé.';
       else status.textContent = `Échec de l'export : ${err instanceof Error ? err.message : err}`;
@@ -129,6 +197,8 @@ export function initExport(store: Store) {
       progress.value = 0;
     }
   });
+
+  refreshFormatUI();
 }
 
 function encodeInWorker(payload: {
