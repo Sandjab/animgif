@@ -68,6 +68,12 @@
           </label>
           <input id="loop-count" type="number" min="1" max="100" value="1" hidden />
           <hr />
+          <div class="row">
+            <span>Format</span>
+            <label><input type="radio" name="fmt" id="fmt-gif" value="gif" checked /> GIF</label>
+            <label><input type="radio" name="fmt" id="fmt-mp4" value="mp4" /> MP4</label>
+          </div>
+          <p id="mp4-hint" class="hint" hidden></p>
           <label>Largeur <input id="out-w" type="number" min="16" max="4096" value="480" /></label>
           <label>Hauteur <input id="out-h" type="number" min="16" max="4096" value="480" /></label>
           <label><input id="lock-ratio" type="checkbox" checked /> Conserver les proportions</label>
