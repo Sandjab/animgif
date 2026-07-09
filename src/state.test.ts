@@ -19,3 +19,9 @@ describe('createStore', () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('initialState', () => {
+  it('exporte en GIF par défaut', () => {
+    expect(initialState().format).toBe('gif');
+  });
+});
