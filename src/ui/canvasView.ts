@@ -36,7 +36,8 @@ export function initCanvasView(store: Store) {
     const view = { imageW: baked.width, imageH: baked.height, outW: w, outH: h };
     const effects = store.get().effects;
     const m = composeEffects(effects, t, view);
-    const scale = w / store.get().outW; // même facteur que previewSize
+    const outW = store.get().outW; // toujours ≥ 16 (clampDim) ; garde défensive contre une division par 0
+    const scale = outW > 0 ? w / outW : 1; // même facteur que previewSize
     const blurPx = composeBlur(effects, t) * scale;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.filter = 'none'; // le fond n'est jamais flouté
