@@ -103,17 +103,25 @@ function renderEffectCard(effect: Effect, index: number, store: Store): HTMLElem
       card.appendChild(numberField('Amplitude (px)', effect.amplitude, (amplitude) => patch({ amplitude })));
       card.appendChild(numberField('Oscillations', effect.oscillations, (oscillations) => patch({ oscillations })));
       break;
+    // Effets oscillatoires : entrées gardées comme spin3d. NaN (champ vidé) → défaut ;
+    // oscillations contraint à un entier ≥ 1 pour préserver la boucle sans couture.
     case 'pulse':
-      card.appendChild(numberField('Amplitude (%)', effect.amplitude, (amplitude) => patch({ amplitude })));
-      card.appendChild(numberField('Oscillations', effect.oscillations, (oscillations) => patch({ oscillations })));
+      card.appendChild(numberField('Amplitude (%)', effect.amplitude, (amplitude) =>
+        patch({ amplitude: Number.isFinite(amplitude) ? amplitude : 15 })));
+      card.appendChild(numberField('Oscillations', effect.oscillations, (oscillations) =>
+        patch({ oscillations: Number.isFinite(oscillations) ? Math.max(1, Math.round(oscillations)) : 2 })));
       break;
     case 'shake':
-      card.appendChild(numberField('Amplitude (px)', effect.amplitude, (amplitude) => patch({ amplitude })));
-      card.appendChild(numberField('Oscillations', effect.oscillations, (oscillations) => patch({ oscillations })));
+      card.appendChild(numberField('Amplitude (px)', effect.amplitude, (amplitude) =>
+        patch({ amplitude: Number.isFinite(amplitude) ? amplitude : 8 })));
+      card.appendChild(numberField('Oscillations', effect.oscillations, (oscillations) =>
+        patch({ oscillations: Number.isFinite(oscillations) ? Math.max(1, Math.round(oscillations)) : 6 })));
       break;
     case 'sway':
-      card.appendChild(numberField('Amplitude (°)', effect.amplitude, (amplitude) => patch({ amplitude })));
-      card.appendChild(numberField('Oscillations', effect.oscillations, (oscillations) => patch({ oscillations })));
+      card.appendChild(numberField('Amplitude (°)', effect.amplitude, (amplitude) =>
+        patch({ amplitude: Number.isFinite(amplitude) ? amplitude : 10 })));
+      card.appendChild(numberField('Oscillations', effect.oscillations, (oscillations) =>
+        patch({ oscillations: Number.isFinite(oscillations) ? Math.max(1, Math.round(oscillations)) : 2 })));
       break;
     case 'spin3d': {
       const axis = document.createElement('label');
