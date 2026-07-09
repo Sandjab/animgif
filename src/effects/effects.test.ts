@@ -76,6 +76,22 @@ describe('effectMatrix', () => {
     expect(p.x).toBeCloseTo(10);
     expect(p.y).toBeCloseTo(90);
   });
+  it('pulse : échelle 1 (identité) à t=0 et t=1, dilate au pic autour du centre', () => {
+    const e: Effect = { kind: 'pulse', amplitude: 20, oscillations: 1 };
+    const sq = { imageW: 100, imageH: 100, outW: 100, outH: 100 };
+    // t=0 → s=1 → identité (sin(0)=0 exact)
+    expect(apply(effectMatrix(e, 0, sq), { x: 10, y: 10 })).toEqual({ x: 10, y: 10 });
+    // t=1 → sin(π)≈0 → s≈1 → quasi identité (toBeCloseTo : sin(π) n'est pas exactement 0)
+    const p1 = apply(effectMatrix(e, 1, sq), { x: 10, y: 10 });
+    expect(p1.x).toBeCloseTo(10);
+    expect(p1.y).toBeCloseTo(10);
+    // t=0.5 → sin(π/2)=1 → s=1.2 ; centre (50,50) fixe, point à droite s'éloigne de 20%
+    const c = apply(effectMatrix(e, 0.5, sq), { x: 50, y: 50 });
+    expect(c.x).toBeCloseTo(50);
+    expect(c.y).toBeCloseTo(50);
+    const p = apply(effectMatrix(e, 0.5, sq), { x: 60, y: 50 });
+    expect(p.x).toBeCloseTo(62); // 50 + 10 * 1.2
+  });
 });
 
 describe('composeEffects', () => {
