@@ -1,6 +1,6 @@
 export interface Rect { x: number; y: number; w: number; h: number }
 
-export type Easing = 'linear' | 'easeInOut' | 'bounce';
+export type Easing = 'linear' | 'easeInOut' | 'bounce' | 'easeIn' | 'easeOut' | 'elastic';
 
 export type Effect =
   | { kind: 'kenBurns'; from: Rect; to: Rect; easing: Easing }

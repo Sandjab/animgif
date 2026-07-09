@@ -18,7 +18,10 @@ function defaultEffect(kind: string, store: Store): Effect {
   }
 }
 
-const EASINGS: [Easing, string][] = [['linear', 'Linéaire'], ['easeInOut', 'Ease in-out'], ['bounce', 'Rebond']];
+const EASINGS: [Easing, string][] = [
+  ['linear', 'Linéaire'], ['easeInOut', 'Ease in-out'], ['bounce', 'Rebond'],
+  ['easeIn', 'Ease in'], ['easeOut', 'Ease out'], ['elastic', 'Élastique'],
+];
 
 function numberField(label: string, value: number, onChange: (v: number) => void): HTMLLabelElement {
   const el = document.createElement('label');

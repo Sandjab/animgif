@@ -3,7 +3,7 @@ import { applyEasing } from './easing';
 
 describe('applyEasing', () => {
   it('préserve les bornes 0 et 1 pour tous les easings', () => {
-    for (const e of ['linear', 'easeInOut', 'bounce'] as const) {
+    for (const e of ['linear', 'easeInOut', 'bounce', 'easeIn', 'easeOut', 'elastic'] as const) {
       expect(applyEasing(e, 0)).toBeCloseTo(0);
       expect(applyEasing(e, 1)).toBeCloseTo(1);
     }
@@ -20,5 +20,15 @@ describe('applyEasing', () => {
     // easeOutBack : dépasse 1 avant de s'y poser
     const overshoot = Math.max(...[0.7, 0.8, 0.9].map((t) => applyEasing('bounce', t)));
     expect(overshoot).toBeGreaterThan(1);
+  });
+  it('easeIn démarre sous la diagonale (accélère)', () => {
+    expect(applyEasing('easeIn', 0.5)).toBeLessThan(0.5);
+  });
+  it('easeOut finit au-dessus de la diagonale (décélère)', () => {
+    expect(applyEasing('easeOut', 0.5)).toBeGreaterThan(0.5);
+  });
+  it('elastic dépasse 1 avant de se poser (ressort)', () => {
+    const samples = [0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.8].map((t) => applyEasing('elastic', t));
+    expect(Math.max(...samples)).toBeGreaterThan(1);
   });
 });
