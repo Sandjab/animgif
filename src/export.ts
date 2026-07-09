@@ -1,6 +1,6 @@
 import { bakeAdjustments } from './adjustments';
 import { decimatedOrder, delayToFps } from './effects/timeline';
-import { computeFrameMatrices, renderFramesChunked } from './frameGenerator';
+import { computeFrameBlurs, computeFrameMatrices, renderFramesChunked } from './frameGenerator';
 import { evenDim, qualityToBitrate } from './mp4Params';
 import type { Store } from './state';
 
@@ -143,8 +143,10 @@ export function initExport(store: Store) {
       const baked = await bakeAdjustments(s.sourceImage, s.bgRemovedBlob, s.adjustments);
       const view = { imageW: baked.width, imageH: baked.height, outW: width, outH: height };
       const matrices = computeFrameMatrices(s.effects, s.steps, view);
+      const blurs = computeFrameBlurs(s.effects, s.steps);
       const rendered = await renderFramesChunked(
-        baked, needed.map((i) => matrices[i]), width, height, s.adjustments.backgroundColor,
+        baked, needed.map((i) => matrices[i]), needed.map((i) => blurs[i]),
+        width, height, s.adjustments.backgroundColor,
         (done, total) => {
           progress.value = done / total;
           status.textContent = `Rendu des frames… (${done}/${total})`;
