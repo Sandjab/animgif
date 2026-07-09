@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@imgly/background-removal": "1.7.0",
-    "gifski-wasm": "^2.2.0"
+    "gifski-wasm": "^2.2.0",
+    "mediabunny": "^1.50.7"
   }
 }
