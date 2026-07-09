@@ -14,6 +14,7 @@ export interface AppState {
   outW: number;       // dimensions d'export
   outH: number;
   quality: number;    // gifski 1-100
+  format: 'gif' | 'mp4'; // format d'export (défaut gif)
 }
 
 export function initialState(): AppState {
@@ -36,6 +37,7 @@ export function initialState(): AppState {
     outW: 480,
     outH: 480,
     quality: 80,
+    format: 'gif',
   };
 }
 
