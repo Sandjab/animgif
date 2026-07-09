@@ -9,7 +9,8 @@ export type Effect =
   | { kind: 'bounce'; amplitude: number; oscillations: number }
   | { kind: 'spin3d'; axis: 'x' | 'y'; turns: number; easing: Easing }
   | { kind: 'pulse'; amplitude: number; oscillations: number }
-  | { kind: 'shake'; amplitude: number; oscillations: number };
+  | { kind: 'shake'; amplitude: number; oscillations: number }
+  | { kind: 'sway'; amplitude: number; oscillations: number };
 
 export interface Adjustments {
   brightness: number;   // 1 = neutre

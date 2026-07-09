@@ -64,6 +64,11 @@ export function effectMatrix(effect: Effect, t: number, view: View): Mat {
       const dy = effect.amplitude * Math.sin(2 * Math.PI * (effect.oscillations + 1) * t);
       return translation(dx, dy);
     }
+    case 'sway': {
+      // Balancement pendulaire : rotation oscillante autour du bas du viewport (effet « suspendu »).
+      const deg = effect.amplitude * Math.sin(2 * Math.PI * effect.oscillations * t);
+      return rotationDeg(deg, view.outW / 2, view.outH);
+    }
   }
 }
 

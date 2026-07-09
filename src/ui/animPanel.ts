@@ -17,6 +17,8 @@ function defaultEffect(kind: string, store: Store): Effect {
       return { kind: 'pulse', amplitude: 15, oscillations: 2 };
     case 'shake':
       return { kind: 'shake', amplitude: 8, oscillations: 6 };
+    case 'sway':
+      return { kind: 'sway', amplitude: 10, oscillations: 2 };
     default:
       return { kind: 'bounce', amplitude: 30, oscillations: 1 };
   }
@@ -57,6 +59,7 @@ const TITLES: Record<Effect['kind'], string> = {
   spin3d: 'Flip 3D',
   pulse: 'Pulse',
   shake: 'Shake',
+  sway: 'Balancement',
 };
 
 function renderEffectCard(effect: Effect, index: number, store: Store): HTMLElement {
@@ -106,6 +109,10 @@ function renderEffectCard(effect: Effect, index: number, store: Store): HTMLElem
       break;
     case 'shake':
       card.appendChild(numberField('Amplitude (px)', effect.amplitude, (amplitude) => patch({ amplitude })));
+      card.appendChild(numberField('Oscillations', effect.oscillations, (oscillations) => patch({ oscillations })));
+      break;
+    case 'sway':
+      card.appendChild(numberField('Amplitude (°)', effect.amplitude, (amplitude) => patch({ amplitude })));
       card.appendChild(numberField('Oscillations', effect.oscillations, (oscillations) => patch({ oscillations })));
       break;
     case 'spin3d': {
