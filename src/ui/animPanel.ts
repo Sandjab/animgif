@@ -19,6 +19,8 @@ function defaultEffect(kind: string, store: Store): Effect {
       return { kind: 'shake', amplitude: 8, oscillations: 6 };
     case 'sway':
       return { kind: 'sway', amplitude: 10, oscillations: 2 };
+    case 'blur':
+      return { kind: 'blur', fromPx: 0, toPx: 8, easing: 'easeInOut' };
     default:
       return { kind: 'bounce', amplitude: 30, oscillations: 1 };
   }
@@ -123,6 +125,15 @@ function renderEffectCard(effect: Effect, index: number, store: Store): HTMLElem
         patch({ amplitude: Number.isFinite(amplitude) ? amplitude : 10 })));
       card.appendChild(numberField('Oscillations', effect.oscillations, (oscillations) =>
         patch({ oscillations: Number.isFinite(oscillations) ? Math.max(1, Math.round(oscillations)) : 2 })));
+      break;
+    case 'blur':
+      // Effet dirigé (comme rotation) : deux bornes + easing. NaN (champ vidé) → défaut ;
+      // flou borné [0, 100] px (négatif invalide, au-delà de 100 coûteux sans gain visuel).
+      card.appendChild(numberField('Flou départ (px)', effect.fromPx, (fromPx) =>
+        patch({ fromPx: Number.isFinite(fromPx) ? Math.min(100, Math.max(0, fromPx)) : 0 })));
+      card.appendChild(numberField('Flou arrivée (px)', effect.toPx, (toPx) =>
+        patch({ toPx: Number.isFinite(toPx) ? Math.min(100, Math.max(0, toPx)) : 8 })));
+      card.appendChild(easingField(effect.easing, (easing) => patch({ easing })));
       break;
     case 'spin3d': {
       const axis = document.createElement('label');
