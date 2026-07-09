@@ -106,6 +106,25 @@ describe('effectMatrix', () => {
     const p = apply(effectMatrix(e, 0.1, sq), { x: 0, y: 0 });
     expect(Math.abs(p.x) + Math.abs(p.y)).toBeGreaterThan(0);
   });
+  it('sway : angle nul à t=0 et t=1, pivote autour du bas du viewport', () => {
+    const e: Effect = { kind: 'sway', amplitude: 30, oscillations: 1 };
+    const sq = { imageW: 100, imageH: 100, outW: 100, outH: 100 };
+    // t=0 → 0° → identité
+    const a0 = apply(effectMatrix(e, 0, sq), { x: 50, y: 0 });
+    expect(a0.x).toBeCloseTo(50);
+    expect(a0.y).toBeCloseTo(0);
+    // t=1 → sin(2π)=0 → 0° → identité
+    const a1 = apply(effectMatrix(e, 1, sq), { x: 50, y: 0 });
+    expect(a1.x).toBeCloseTo(50);
+    expect(a1.y).toBeCloseTo(0);
+    // pivot en bas (50,100) fixe quel que soit t
+    const pivot = apply(effectMatrix(e, 0.25, sq), { x: 50, y: 100 });
+    expect(pivot.x).toBeCloseTo(50);
+    expect(pivot.y).toBeCloseTo(100);
+    // à t=0.25, sin(π/2)=1 → 30° ; un point au sommet se déplace latéralement
+    const top = apply(effectMatrix(e, 0.25, sq), { x: 50, y: 0 });
+    expect(top.x).not.toBeCloseTo(50);
+  });
 });
 
 describe('composeEffects', () => {
