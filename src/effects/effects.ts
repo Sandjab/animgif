@@ -57,6 +57,13 @@ export function effectMatrix(effect: Effect, t: number, view: View): Mat {
       const s = 1 + (effect.amplitude / 100) * Math.abs(Math.sin(Math.PI * effect.oscillations * t));
       return scaling(s, s, view.outW / 2, view.outH / 2);
     }
+    case 'shake': {
+      // Jitter de translation : fréquences différentes en x et y (k et k+1) → aspect « tremblé »
+      // façon Lissajous ; les deux composantes valent 0 en t=0 et t=1 (oscillations entières).
+      const dx = effect.amplitude * Math.sin(2 * Math.PI * effect.oscillations * t);
+      const dy = effect.amplitude * Math.sin(2 * Math.PI * (effect.oscillations + 1) * t);
+      return translation(dx, dy);
+    }
   }
 }
 

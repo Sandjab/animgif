@@ -92,6 +92,20 @@ describe('effectMatrix', () => {
     const p = apply(effectMatrix(e, 0.5, sq), { x: 60, y: 50 });
     expect(p.x).toBeCloseTo(62); // 50 + 10 * 1.2
   });
+  it('shake : déplacement nul à t=0 et t=1 (oscillations entières), non nul entre-temps', () => {
+    const e: Effect = { kind: 'shake', amplitude: 10, oscillations: 2 };
+    const sq = { imageW: 100, imageH: 100, outW: 100, outH: 100 };
+    // translation pure : (0,0) mesure le déplacement
+    const p0 = apply(effectMatrix(e, 0, sq), { x: 0, y: 0 });
+    expect(p0.x).toBeCloseTo(0);
+    expect(p0.y).toBeCloseTo(0);
+    const p1 = apply(effectMatrix(e, 1, sq), { x: 0, y: 0 });
+    expect(p1.x).toBeCloseTo(0);
+    expect(p1.y).toBeCloseTo(0);
+    // fréquences x/y différentes → déplacement non nul à mi-parcours d'une oscillation
+    const p = apply(effectMatrix(e, 0.1, sq), { x: 0, y: 0 });
+    expect(Math.abs(p.x) + Math.abs(p.y)).toBeGreaterThan(0);
+  });
 });
 
 describe('composeEffects', () => {
