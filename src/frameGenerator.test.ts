@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeFrameMatrices } from './frameGenerator';
+import { computeFrameBlurs, computeFrameMatrices } from './frameGenerator';
 import { apply } from './effects/matrix';
 import type { Effect } from './types';
 
@@ -11,5 +11,18 @@ describe('computeFrameMatrices', () => {
     expect(mats).toHaveLength(4);
     const xs = mats.map((m) => apply(m, { x: 0, y: 0 }).x);
     [0, 30, 60, 90].forEach((v, i) => expect(xs[i]).toBeCloseTo(v)); // 90 × ⅓ n'est pas exact en flottants
+  });
+});
+
+describe('computeFrameBlurs', () => {
+  it('un rayon par step, interpolé sur la séquence', () => {
+    const b: Effect = { kind: 'blur', fromPx: 0, toPx: 8, easing: 'linear' };
+    const blurs = computeFrameBlurs([b], 3);
+    expect(blurs).toHaveLength(3);
+    [0, 4, 8].forEach((v, i) => expect(blurs[i]).toBeCloseTo(v)); // t = 0, 0.5, 1
+  });
+  it('0 partout sans effet blur', () => {
+    const tr: Effect = { kind: 'translation', dx: 10, dy: 0, easing: 'linear' };
+    expect(computeFrameBlurs([tr], 4)).toEqual([0, 0, 0, 0]);
   });
 });
