@@ -52,6 +52,11 @@ export function effectMatrix(effect: Effect, t: number, view: View): Mat {
         ? scaling(s, 1, view.outW / 2, view.outH / 2)
         : scaling(1, s, view.outW / 2, view.outH / 2);
     }
+    case 'pulse': {
+      // Échelle uniforme oscillante autour du centre de sortie ; part de 1, culmine, revient à 1.
+      const s = 1 + (effect.amplitude / 100) * Math.abs(Math.sin(Math.PI * effect.oscillations * t));
+      return scaling(s, s, view.outW / 2, view.outH / 2);
+    }
   }
 }
 

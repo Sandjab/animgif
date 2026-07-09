@@ -7,7 +7,8 @@ export type Effect =
   | { kind: 'rotation'; fromDeg: number; toDeg: number; easing: Easing }
   | { kind: 'translation'; dx: number; dy: number; easing: Easing }
   | { kind: 'bounce'; amplitude: number; oscillations: number }
-  | { kind: 'spin3d'; axis: 'x' | 'y'; turns: number; easing: Easing };
+  | { kind: 'spin3d'; axis: 'x' | 'y'; turns: number; easing: Easing }
+  | { kind: 'pulse'; amplitude: number; oscillations: number };
 
 export interface Adjustments {
   brightness: number;   // 1 = neutre
