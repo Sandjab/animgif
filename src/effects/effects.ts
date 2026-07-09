@@ -1,6 +1,6 @@
 import type { Effect, Rect } from '../types';
 import { applyEasing } from './easing';
-import { multiply, rotationDeg, scaling, translation, type Mat } from './matrix';
+import { identity, multiply, rotationDeg, scaling, translation, type Mat } from './matrix';
 
 export interface View { imageW: number; imageH: number; outW: number; outH: number }
 
@@ -69,6 +69,10 @@ export function effectMatrix(effect: Effect, t: number, view: View): Mat {
       const deg = effect.amplitude * Math.sin(2 * Math.PI * effect.oscillations * t);
       return rotationDeg(deg, view.outW / 2, view.outH);
     }
+    case 'blur':
+      // Canal non géométrique (filtre par frame, voir composeBlur) : identité pour
+      // l'exhaustivité du switch. Jamais atteint via composeEffects, qui ignore `blur`.
+      return identity();
   }
 }
 
@@ -77,8 +81,20 @@ export function composeEffects(effects: Effect[], t: number, view: View): Mat {
   const kb = effects.find((e) => e.kind === 'kenBurns');
   let m = kb ? effectMatrix(kb, t, view) : fitMatrix(view);
   for (const e of effects) {
-    if (e.kind === 'kenBurns') continue;
+    if (e.kind === 'kenBurns' || e.kind === 'blur') continue;
     m = multiply(effectMatrix(e, t, view), m);
   }
   return m;
+}
+
+// Canal filtre : somme des rayons de flou (px, résolution d'export) des effets `blur`
+// à l'instant t ; 0 si aucun. Chaque contribution est clampée ≥ 0 (un easing qui dépasse,
+// ex. élastique, ne doit pas produire de flou négatif).
+export function composeBlur(effects: Effect[], t: number): number {
+  let px = 0;
+  for (const e of effects) {
+    if (e.kind !== 'blur') continue;
+    px += Math.max(0, lerp(e.fromPx, e.toPx, applyEasing(e.easing, t)));
+  }
+  return px;
 }

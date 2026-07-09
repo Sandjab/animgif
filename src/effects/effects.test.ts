@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { apply } from './matrix';
-import { composeEffects, effectMatrix, fitMatrix } from './effects';
+import { composeBlur, composeEffects, effectMatrix, fitMatrix } from './effects';
 import type { Effect } from '../types';
 
 const view = { imageW: 200, imageH: 100, outW: 100, outH: 50 };
@@ -154,5 +154,54 @@ describe('composeEffects', () => {
     const p2 = apply(composeEffects([rot, tr], 1, sq), { x: 0, y: 0 });
     expect(p2.x).toBeCloseTo(110);
     expect(p2.y).toBeCloseTo(0);
+  });
+});
+
+describe('composeBlur', () => {
+  it('vaut 0 sans effet blur', () => {
+    expect(composeBlur([], 0.5)).toBe(0);
+    const rot: Effect = { kind: 'rotation', fromDeg: 0, toDeg: 90, easing: 'linear' };
+    expect(composeBlur([rot], 0.5)).toBe(0);
+  });
+  it('interpole de fromPx à toPx (easing linéaire)', () => {
+    const b: Effect = { kind: 'blur', fromPx: 0, toPx: 10, easing: 'linear' };
+    expect(composeBlur([b], 0)).toBeCloseTo(0);
+    expect(composeBlur([b], 1)).toBeCloseTo(10);
+    expect(composeBlur([b], 0.5)).toBeCloseTo(5);
+  });
+  it('respecte un easing non linéaire', () => {
+    // easeIn(0.5) = 0.25 → 0 + 0.25 × 10 = 2.5
+    const b: Effect = { kind: 'blur', fromPx: 0, toPx: 10, easing: 'easeIn' };
+    expect(composeBlur([b], 0.5)).toBeCloseTo(2.5);
+  });
+  it('additionne plusieurs effets blur', () => {
+    const b1: Effect = { kind: 'blur', fromPx: 0, toPx: 4, easing: 'linear' };
+    const b2: Effect = { kind: 'blur', fromPx: 2, toPx: 2, easing: 'linear' };
+    expect(composeBlur([b1, b2], 1)).toBeCloseTo(6); // 4 + 2
+  });
+  it('clampe à 0 les dépassements négatifs (ex. easing élastique)', () => {
+    // elastic dépasse 1 → lerp(10, 0, >1) devient négatif ; un flou négatif est invalide.
+    const b: Effect = { kind: 'blur', fromPx: 10, toPx: 0, easing: 'elastic' };
+    const samples = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1].map((t) => composeBlur([b], t));
+    expect(Math.min(...samples)).toBeGreaterThanOrEqual(0);
+  });
+  it('clampe par effet, pas sur la somme (un dépassement négatif n\'annule pas un autre flou)', () => {
+    // À t=0.1, elastic(0.1)=1.25 → lerp(10,0,1.25) = −2.5, clampé à 0. Le flou constant de 5
+    // doit rester intact : clamp par effet → 0 + 5 = 5 (un clamp sur la somme donnerait 2.5).
+    const overshoot: Effect = { kind: 'blur', fromPx: 10, toPx: 0, easing: 'elastic' };
+    const constant: Effect = { kind: 'blur', fromPx: 5, toPx: 5, easing: 'linear' };
+    expect(composeBlur([overshoot, constant], 0.1)).toBeCloseTo(5);
+  });
+});
+
+describe('composeEffects × blur (garde de régression)', () => {
+  it('un effet blur ne modifie jamais la géométrie', () => {
+    // Le flou est un canal filtre, pas une transformation : la matrice composée doit
+    // être identique avec et sans l'effet blur dans la liste.
+    const rot: Effect = { kind: 'rotation', fromDeg: 0, toDeg: 90, easing: 'linear' };
+    const blur: Effect = { kind: 'blur', fromPx: 0, toPx: 8, easing: 'linear' };
+    const without = composeEffects([rot], 0.5, view);
+    const withBlur = composeEffects([rot, blur], 0.5, view);
+    expect(withBlur).toEqual(without);
   });
 });
