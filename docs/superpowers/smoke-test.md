@@ -22,3 +22,11 @@
 14. Décimation « 1 sur 2 » → GIF exporté avec 2× moins de frames, même durée totale.
 15. Lancer un gros export (2048 px, 120 steps, accepter l'avertissement mémoire) puis
     Annuler pendant le rendu → « Export annulé. », pas de téléchargement, bouton réactivé.
+16. Choisir Format « MP4 » → sur navigateur compatible : le bouton devient « Exporter le
+    MP4 » et la ligne d'aide « Une seule passe… » apparaît (sur navigateur sans WebCodecs :
+    retour à GIF, option MP4 désactivée, message « MP4 non supporté »).
+17. Exporter en MP4 480×480 → fichier .mp4 téléchargé ; l'ouvrir : lecture correcte,
+    dimensions paires, durée = frames × délai, conforme à la preview.
+18. Format MP4 avec dimensions impaires (ex. 481) → le MP4 sort en 480 (arrondi au pair).
+19. Gros export MP4, Annuler pendant l'encodage → « Export annulé. », aucun téléchargement,
+    bouton réactivé.
