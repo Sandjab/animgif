@@ -15,10 +15,14 @@ class ExportCancelled extends Error {}
 // Déclenche le téléchargement d'un blob sous le nom donné.
 function download(blob: Blob, filename: string) {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
+  a.href = url;
   a.download = filename;
   a.click();
-  URL.revokeObjectURL(a.href);
+  // Révocation différée : certains navigateurs (Firefox, certaines versions de Safari/Chrome)
+  // n'ont pas encore initié le téléchargement au moment du click() synchrone, et une
+  // révocation immédiate le ferait échouer.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function initExport(store: Store) {
@@ -56,8 +60,22 @@ export function initExport(store: Store) {
   // d'encodage AVC. Si absent, repasse en GIF et désactive l'option.
   fmtMp4.addEventListener('change', async () => {
     if (!fmtMp4.checked) return;
-    const { isMp4Supported } = await import('./mp4');
-    const supported = await isMp4Supported();
+    let supported: boolean;
+    try {
+      const { isMp4Supported } = await import('./mp4');
+      supported = await isMp4Supported();
+    } catch {
+      // Échec du chargement paresseux de mediabunny (réseau) ou de la détection
+      // (VideoEncoder absent en contexte non sécurisé) : repli GIF sans planter l'UI.
+      // On ne désactive PAS l'option — l'échec peut être transitoire (nouvel essai possible).
+      if (!fmtMp4.checked) return;
+      fmtGif.checked = true;
+      store.update({ format: 'gif' });
+      refreshFormatUI();
+      mp4Hint.hidden = false;
+      mp4Hint.textContent = 'Échec du chargement du support MP4.';
+      return;
+    }
     if (!fmtMp4.checked) return; // l'utilisateur a changé de format pendant le chargement async
     if (!supported) {
       fmtMp4.disabled = true;

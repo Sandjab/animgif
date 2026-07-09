@@ -20,6 +20,9 @@ export interface Mp4Options {
 // via `await source.add(...)`. Retourne le Blob video/mp4, ou null si annulé.
 export async function encodeMp4(frames: ImageData[], opts: Mp4Options): Promise<Blob | null> {
   const { width, height, fps, bitrate, onProgress, isCancelled } = opts;
+  // Déjà annulé (pendant le rendu ou le chargement paresseux) : rien à allouer.
+  if (isCancelled()) return null;
+
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -33,21 +36,28 @@ export async function encodeMp4(frames: ImageData[], opts: Mp4Options): Promise<
   output.addVideoTrack(source);
   await output.start();
 
-  const frameDur = 1 / fps; // secondes
-  for (let i = 0; i < frames.length; i++) {
+  try {
+    const frameDur = 1 / fps; // secondes
+    for (let i = 0; i < frames.length; i++) {
+      if (isCancelled()) {
+        await output.cancel();
+        return null;
+      }
+      ctx.putImageData(frames[i], 0, 0);
+      await source.add(i * frameDur, frameDur);
+      onProgress(i + 1, frames.length);
+    }
     if (isCancelled()) {
       await output.cancel();
       return null;
     }
-    ctx.putImageData(frames[i], 0, 0);
-    await source.add(i * frameDur, frameDur);
-    onProgress(i + 1, frames.length);
+    await output.finalize();
+  } catch (err) {
+    // Une erreur d'encodage (WebCodecs, mémoire…) doit libérer l'encodeur — ressource
+    // matérielle limitée — avant de remonter ; on n'écrase pas l'erreur d'origine.
+    await output.cancel().catch(() => {});
+    throw err;
   }
-  if (isCancelled()) {
-    await output.cancel();
-    return null;
-  }
-  await output.finalize();
   // `target.buffer` n'est `null` qu'avant finalisation ; `finalize()` a résolu ci-dessus.
   return new Blob([target.buffer!], { type: 'video/mp4' });
 }
