@@ -30,3 +30,6 @@
 18. Format MP4 avec dimensions impaires (ex. 481) → le MP4 sort en 480 (arrondi au pair).
 19. Gros export MP4, Annuler pendant l'encodage → « Export annulé. », aucun téléchargement,
     bouton réactivé.
+20. Ajouter Pulse, Shake et Balancement (un à la fois) → ▶ : battement, secousse et
+    pendule visibles, boucle sans à-coup. Sur un effet Rotation, choisir l'easing
+    « Élastique » → la rotation dépasse puis se stabilise.
