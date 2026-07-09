@@ -60,6 +60,7 @@ const TITLES: Record<Effect['kind'], string> = {
   pulse: 'Pulse',
   shake: 'Shake',
   sway: 'Balancement',
+  blur: 'Mise au point',
 };
 
 function renderEffectCard(effect: Effect, index: number, store: Store): HTMLElement {

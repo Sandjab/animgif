@@ -10,7 +10,8 @@ export type Effect =
   | { kind: 'spin3d'; axis: 'x' | 'y'; turns: number; easing: Easing }
   | { kind: 'pulse'; amplitude: number; oscillations: number }
   | { kind: 'shake'; amplitude: number; oscillations: number }
-  | { kind: 'sway'; amplitude: number; oscillations: number };
+  | { kind: 'sway'; amplitude: number; oscillations: number }
+  | { kind: 'blur'; fromPx: number; toPx: number; easing: Easing };
 
 export interface Adjustments {
   brightness: number;   // 1 = neutre
